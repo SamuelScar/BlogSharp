@@ -72,6 +72,8 @@ Senha: blogsharp_password
 
 Esses valores ficam no arquivo `.env` da raiz do projeto. O arquivo `.env.example` serve como modelo para configurar o ambiente local.
 
+As variáveis `HOST_UID` e `HOST_GID` definem o usuário usado pelo container da API durante o desenvolvimento. Isso evita que arquivos gerados pelo `dotnet watch`, como `bin/` e `obj/`, fiquem com permissões incorretas no host.
+
 Dentro da rede do Docker Compose, a API acessa o banco pelo host `database`.
 
 Os dados do PostgreSQL são mantidos no volume Docker `blogsharp_postgres_data`.

@@ -9,6 +9,7 @@ services:
         condition: service_healthy
     ports:
       - "5000:8080"
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     volumes:
       - ./src/BlogSharp.Api:/app
     working_dir: /app
@@ -16,6 +17,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: Host=database;Port=5432;Database=${POSTGRES_DB:-blogsharp};Username=${POSTGRES_USER:-blogsharp};Password=${POSTGRES_PASSWORD:-blogsharp_password}
+      Jwt__SecretKey: ${JWT_SECRET_KEY:?JWT_SECRET_KEY nao definida no .env}
 
   database:
     image: postgres:16-alpine
