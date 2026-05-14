@@ -1,0 +1,6 @@
+# .dockerignore placeholder
+**/bin
+**/obj
+**/.vs
+**/*.user
+**/*.suo

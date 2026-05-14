@@ -1,0 +1,55 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blogsharp-api
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "5000:8080"
+    volumes:
+      - ./src/BlogSharp.Api:/app
+    working_dir: /app
+    command: sh -c "dotnet restore && dotnet watch run --urls http://0.0.0.0:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: Host=database;Port=5432;Database=${POSTGRES_DB:-blogsharp};Username=${POSTGRES_USER:-blogsharp};Password=${POSTGRES_PASSWORD:-blogsharp_password}
+
+  database:
+    image: postgres:16-alpine
+    container_name: blogsharp-database
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-blogsharp}
+      POSTGRES_USER: ${POSTGRES_USER:-blogsharp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-blogsharp_password}
+    volumes:
+      - blogsharp_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  sonarqube:
+    image: sonarqube:lts-community
+    container_name: blogsharp-sonarqube
+    profiles:
+      - quality
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    volumes:
+      - blogsharp_sonarqube_data:/opt/sonarqube/data
+      - blogsharp_sonarqube_extensions:/opt/sonarqube/extensions
+      - blogsharp_sonarqube_logs:/opt/sonarqube/logs
+
+volumes:
+  blogsharp_postgres_data:
+  blogsharp_sonarqube_data:
+  blogsharp_sonarqube_extensions:
+  blogsharp_sonarqube_logs:
