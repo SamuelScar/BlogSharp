@@ -78,6 +78,25 @@ Dentro da rede do Docker Compose, a API acessa o banco pelo host `database`.
 
 Os dados do PostgreSQL são mantidos no volume Docker `blogsharp_postgres_data`.
 
+## Validações nos Models
+
+O projeto usa Data Annotations para declarar validações simples nos models, como `[Required]`, `[EmailAddress]` e `[StringLength]`. Isso deixa regras básicas visíveis na própria classe e ajuda o ASP.NET Core a validar dados recebidos pela API.
+
+As validações de entrada também devem ser reforçadas nos DTOs, porque eles representam o contrato das requisições e respostas da API.
+
+## Operações Assíncronas
+
+As interfaces de services e repositories usam `Task` e o sufixo `Async` porque essas camadas irão acessar o banco com Entity Framework Core. Acesso ao banco é uma operação de I/O: a requisição precisa aguardar a resposta do PostgreSQL, mas a thread do ASP.NET Core não precisa ficar bloqueada enquanto isso acontece.
+
+O EF Core oferece métodos assíncronos para operações que executam I/O, como `ToListAsync`, `FirstOrDefaultAsync` e `SaveChangesAsync`. A documentação de boas práticas do ASP.NET Core também recomenda chamar APIs de acesso a dados de forma assíncrona quando elas estiverem disponíveis.
+
+Usar `async/await` não elimina a espera da requisição e não resolve sozinho problemas de concorrência. O cuidado principal é não executar múltiplas operações paralelas no mesmo `DbContext`. Para regras de consistência, o projeto ainda deve usar constraints, índices únicos, chaves estrangeiras e transações quando necessário.
+
+Referências:
+
+- [Asynchronous Programming - EF Core](https://learn.microsoft.com/en-us/ef/core/miscellaneous/async)
+- [ASP.NET Core Best Practices](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/best-practices)
+
 ## SonarQube
 
 O projeto possui um serviço Docker para rodar o SonarQube localmente e analisar a qualidade do código.
