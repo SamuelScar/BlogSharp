@@ -1,15 +1,16 @@
 using BlogSharp.Api.DTOs;
-using BlogSharp.Api.Models;
 
 namespace BlogSharp.Api.Services;
 
 public interface IUsuarioService
 {
-    Task<Usuario> CadastrarAsync(Usuario usuario);
+    Task<UsuarioResponse?> BuscarPorIdAsync(long id);
 
-    Task<Usuario?> AtualizarAsync(long id, Usuario usuario);
+    Task<UsuarioResponse> CadastrarAsync(UsuarioCadastro usuarioCadastro);
+
+    Task<UsuarioResponse?> AtualizarAsync(long id, UsuarioAtualizacao usuarioAtualizacao);
 
     Task<bool> ExcluirAsync(long id);
 
-    Task<UsuarioLogin?> AutenticarAsync(UsuarioLogin usuarioLogin);
+    Task<UsuarioLoginResponse?> AutenticarAsync(UsuarioLogin usuarioLogin);
 }

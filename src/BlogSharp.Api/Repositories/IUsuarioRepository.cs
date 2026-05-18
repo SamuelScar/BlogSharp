@@ -4,11 +4,13 @@ namespace BlogSharp.Api.Repositories;
 
 public interface IUsuarioRepository
 {
+    Task<Usuario?> BuscarPorIdAsync(long id);
+
     Task<Usuario?> BuscarPorEmailAsync(string email);
 
     Task<Usuario> CadastrarAsync(Usuario usuario);
 
-    Task<Usuario?> AtualizarAsync(long id, Usuario usuario);
+    Task<Usuario> AtualizarAsync(Usuario usuario);
 
-    Task<bool> ExcluirAsync(long id);
+    Task ExcluirAsync(Usuario usuario);
 }

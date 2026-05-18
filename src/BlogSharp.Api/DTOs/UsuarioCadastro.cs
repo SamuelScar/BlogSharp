@@ -2,8 +2,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BlogSharp.Api.DTOs;
 
-public class UsuarioLogin
+public class UsuarioCadastro
 {
+    [Required]
+    [StringLength(100)]
+    public string Nome { get; set; } = string.Empty;
+
     [Required]
     [EmailAddress]
     [StringLength(255)]
@@ -13,4 +17,9 @@ public class UsuarioLogin
     [StringLength(100, MinimumLength = 6)]
     public string Senha { get; set; } = string.Empty;
 
+    [StringLength(30)]
+    public string Tipo { get; set; } = "Usuario";
+
+    [StringLength(500)]
+    public string? Foto { get; set; }
 }

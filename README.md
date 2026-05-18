@@ -84,6 +84,14 @@ O projeto usa Data Annotations para declarar validações simples nos models, co
 
 As validações de entrada também devem ser reforçadas nos DTOs, porque eles representam o contrato das requisições e respostas da API.
 
+No CRUD de usuários, os DTOs foram separados conforme o formato necessário em cada chamada. Criamos DTOs de entrada para cadastro, atualização e login, e reutilizamos `UsuarioResponse` nas chamadas que retornam os mesmos dados públicos do usuário. Uma resposta separada só foi criada quando a saída muda da entrada, como em `UsuarioLoginResponse`, que também retorna o token JWT.
+
+## Autenticação JWT
+
+O token JWT do usuário guarda apenas dados úteis para identificação e autorização. Usamos o `Id` como identificador principal do usuário autenticado, o `Email` e o `Nome` como informações de contexto, e o `Tipo` como perfil de acesso para permitir regras futuras como rotas restritas a administradores.
+
+Dados sensíveis, como senha ou hash da senha, não devem entrar no token. O objetivo é manter o JWT suficiente para validar a identidade do usuário sem transformar o token em uma cópia completa do cadastro.
+
 ## Operações Assíncronas
 
 As interfaces de services e repositories usam `Task` e o sufixo `Async` porque essas camadas irão acessar o banco com Entity Framework Core. Acesso ao banco é uma operação de I/O: a requisição precisa aguardar a resposta do PostgreSQL, mas a thread do ASP.NET Core não precisa ficar bloqueada enquanto isso acontece.
