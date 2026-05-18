@@ -6,12 +6,15 @@ O projeto será evoluído em camadas, com persistência de dados, autenticação
 ## Sumário
 
 - [Como rodar o projeto](#como-rodar-o-projeto)
-- Estrutura do projeto
-- Tecnologias utilizadas
-- Banco de dados
-- Endpoints da API
+- [Funcionalidades atuais](#funcionalidades-atuais)
+- [Estrutura do projeto](#estrutura-do-projeto)
+- [Tecnologias utilizadas](#tecnologias-utilizadas)
+- [Banco de dados](#banco-de-dados)
+- [Endpoints da API](#endpoints-da-api)
+- [Testes](#testes)
+- [Seeders](#seeders)
 - [SonarQube](#sonarqube)
-- Licença
+- [Licença](#licença)
 
 ## Como rodar o projeto
 
@@ -21,6 +24,32 @@ No estado atual, o projeto já possui serviços Docker para executar a API e o b
 
 - Docker
 - Docker Compose v2
+
+### Configurar variáveis de ambiente
+
+Crie o arquivo `.env` na raiz do projeto usando `.env.example` como base:
+
+```bash
+cp .env.example .env
+```
+
+Para desenvolvimento local, mantenha os dados do banco alinhados com o `docker-compose.yml` e defina uma chave JWT com pelo menos 32 caracteres:
+
+```env
+POSTGRES_DB=blogsharp
+POSTGRES_USER=blogsharp
+POSTGRES_PASSWORD=blogsharp_password
+JWT_SECRET_KEY=troque_por_uma_chave_segura_com_pelo_menos_32_caracteres
+HOST_UID=1000
+HOST_GID=1000
+```
+
+`HOST_UID` e `HOST_GID` devem representar o usuário do host que executa o Docker. Em Linux, geralmente é possível consultar com:
+
+```bash
+id -u
+id -g
+```
 
 ### Subir a API
 
@@ -56,6 +85,51 @@ Para encerrar o ambiente:
 docker compose down
 ```
 
+## Funcionalidades atuais
+
+- API ASP.NET Core 8 com Swagger em ambiente de desenvolvimento.
+- PostgreSQL via Docker Compose.
+- Entity Framework Core com migrations.
+- CRUD de usuários.
+- Login com validação de email e senha.
+- Geração de JWT.
+- Senhas armazenadas com `PasswordHasher`.
+- DTOs separados para entrada e resposta da API.
+- Seeders fixos e dinâmicos para usuários.
+- Testes unitários do `UsuarioService`.
+- SonarQube local em profile separado.
+
+## Estrutura do projeto
+
+```text
+src/BlogSharp.Api/
+├── Config/
+├── Controllers/
+├── Data/
+├── DTOs/
+├── Middlewares/
+├── Migrations/
+├── Models/
+├── Repositories/
+├── Services/
+└── Program.cs
+
+tests/BlogSharp.Api.Tests/
+└── Services/
+```
+
+## Tecnologias utilizadas
+
+- C# / .NET 8
+- ASP.NET Core Web API
+- Entity Framework Core
+- PostgreSQL
+- Docker e Docker Compose
+- Swagger / Swashbuckle
+- JWT Bearer
+- xUnit
+- SonarQube
+
 ## Banco de dados
 
 O projeto utiliza PostgreSQL como banco de dados relacional.
@@ -86,11 +160,94 @@ As validações de entrada também devem ser reforçadas nos DTOs, porque eles r
 
 No CRUD de usuários, os DTOs foram separados conforme o formato necessário em cada chamada. Criamos DTOs de entrada para cadastro, atualização e login, e reutilizamos `UsuarioResponse` nas chamadas que retornam os mesmos dados públicos do usuário. Uma resposta separada só foi criada quando a saída muda da entrada, como em `UsuarioLoginResponse`, que também retorna o token JWT.
 
+## Endpoints da API
+
+Com a API em execução, a documentação interativa fica disponível em:
+
+```text
+http://localhost:5000/swagger/index.html
+```
+
+Endpoints atuais de usuários:
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `GET` | `/api/usuarios/{id}` | Busca usuário por id |
+| `POST` | `/api/usuarios/cadastrar` | Cadastra novo usuário |
+| `PUT` | `/api/usuarios/{id}` | Atualiza dados do usuário |
+| `DELETE` | `/api/usuarios/{id}` | Exclui usuário |
+| `POST` | `/api/usuarios/login` | Autentica usuário e retorna JWT |
+
+Exemplo de cadastro:
+
+```json
+{
+  "nome": "Samuel Teste",
+  "email": "samuel.teste@email.com",
+  "senha": "123456",
+  "tipo": "Usuario",
+  "foto": "https://avatars.githubusercontent.com/u/9919?s=200&v=4"
+}
+```
+
+Exemplo de login:
+
+```json
+{
+  "email": "samuel.teste@email.com",
+  "senha": "123456"
+}
+```
+
 ## Autenticação JWT
 
 O token JWT do usuário guarda apenas dados úteis para identificação e autorização. Usamos o `Id` como identificador principal do usuário autenticado, o `Email` e o `Nome` como informações de contexto, e o `Tipo` como perfil de acesso para permitir regras futuras como rotas restritas a administradores.
 
 Dados sensíveis, como senha ou hash da senha, não devem entrar no token. O objetivo é manter o JWT suficiente para validar a identidade do usuário sem transformar o token em uma cópia completa do cadastro.
+
+## Melhorias futuras
+
+Uma melhoria planejada é criar um middleware global de exceções para padronizar as respostas de erro da API e reduzir `try/catch` repetido nos controllers.
+
+## Testes
+
+Os testes unitários ficam em `tests/BlogSharp.Api.Tests` e cobrem as regras principais do `UsuarioService`, usando fakes simples para repository e token.
+
+Para executar:
+
+```bash
+dotnet test BlogSharp.sln
+```
+
+## Seeders
+
+O projeto usa dois modos de seeder para usuários.
+
+O primeiro modo é o seeder fixo automático. Ele roda quando a API inicia em ambiente de desenvolvimento. A migration não chama o seeder; é o seeder que aplica migrations pendentes antes de inserir os dados iniciais.
+
+Fluxo ao subir a API:
+
+```text
+API iniciou em Development
+Seeder de usuários executa
+Migrations pendentes são aplicadas
+Usuários fixos são criados se os emails ainda não existirem
+```
+
+Usuários disponíveis para testes:
+
+| Perfil | Email | Senha |
+| --- | --- | --- |
+| Admin | `admin@blogsharp.com` | `Admin@123` |
+| Usuario | `usuario@blogsharp.com` | `Usuario@123` |
+
+O segundo modo é o seeder dinâmico manual. Ele deve ser executado pela linha de comando quando for necessário criar uma massa maior de usuários para simular uso real:
+
+```bash
+docker compose exec api dotnet run -- seed usuarios 10
+```
+
+O número final define quantos usuários serão criados. Os usuários aleatórios usam emails únicos no domínio `seed.blogsharp.local`, tipo `Usuario` ou `Admin`, foto como URL e senha padrão `Senha@123`.
 
 ## Operações Assíncronas
 
@@ -142,3 +299,7 @@ dotnet sonarscanner begin /k:"blogsharp" /d:sonar.host.url="http://localhost:900
 dotnet build BlogSharp.sln
 dotnet sonarscanner end /d:sonar.token="<SEU_TOKEN>"
 ```
+
+## Licença
+
+Este projeto está licenciado conforme o arquivo `LICENSE`.

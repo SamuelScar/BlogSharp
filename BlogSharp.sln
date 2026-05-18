@@ -6,6 +6,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlogSharp.Api", "src\BlogSharp.Api\BlogSharp.Api.csproj", "{D2B578DE-889C-AA42-629E-FF733225EB46}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{4811E071-CC4A-4D72-AFD8-80D2389F320C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlogSharp.Api.Tests", "tests\BlogSharp.Api.Tests\BlogSharp.Api.Tests.csproj", "{51D85E17-58CB-4B59-A53E-D82886ACD5EE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -16,12 +20,17 @@ Global
 		{D2B578DE-889C-AA42-629E-FF733225EB46}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D2B578DE-889C-AA42-629E-FF733225EB46}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D2B578DE-889C-AA42-629E-FF733225EB46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51D85E17-58CB-4B59-A53E-D82886ACD5EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51D85E17-58CB-4B59-A53E-D82886ACD5EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51D85E17-58CB-4B59-A53E-D82886ACD5EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51D85E17-58CB-4B59-A53E-D82886ACD5EE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{D2B578DE-889C-AA42-629E-FF733225EB46} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{51D85E17-58CB-4B59-A53E-D82886ACD5EE} = {4811E071-CC4A-4D72-AFD8-80D2389F320C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FC5A7AA0-5FF9-441F-BDC3-849810899166}

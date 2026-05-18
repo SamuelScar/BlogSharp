@@ -1,5 +1,7 @@
+using BlogSharp.Api.Commands;
 using BlogSharp.Api.Config;
 using BlogSharp.Api.Data;
+using BlogSharp.Api.Data.Seeders;
 using BlogSharp.Api.Models;
 using BlogSharp.Api.Repositories;
 using BlogSharp.Api.Services;
@@ -24,8 +26,15 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 
 var app = builder.Build();
 
+if (await AppCommandRunner.ExecutarAsync(args, app.Services))
+{
+    return;
+}
+
 if (app.Environment.IsDevelopment())
 {
+    await app.Services.SeedUsuariosAsync();
+
     app.UseSwagger();
     app.UseSwaggerUI();
 }
