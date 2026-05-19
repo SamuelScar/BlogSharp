@@ -25,7 +25,7 @@ builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerComJwt();
 builder.Services.AddAuthorization();
 builder.Services.AddJwtAuthentication(builder.Configuration);
 

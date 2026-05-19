@@ -240,7 +240,9 @@ O projeto possui um serviço Docker para rodar o SonarQube localmente e analisar
 
 Como o SonarQube não é necessário para executar a API no dia a dia, ele fica no profile `quality` do Docker Compose.
 
-Para subir o SonarQube:
+### 1. Subir o SonarQube
+
+Na raiz do projeto, execute:
 
 ```bash
 docker compose --profile quality up -d sonarqube
@@ -256,7 +258,17 @@ No primeiro acesso, use o login padrão `admin` e senha `admin`. O SonarQube ir�
 
 Esta configuração usa o banco interno do SonarQube, suficiente para ambiente local de estudo e análise inicial.
 
-As configurações básicas do projeto ficam no arquivo `sonar-project.properties`.
+### 2. Configurar o token
+
+O token do SonarQube deve ficar apenas no `.env` local, na variável `SONAR_TOKEN`. Essa decisão evita colocar segredo em arquivo versionado.
+
+```env
+SONAR_TOKEN=seu_token_do_sonarqube
+```
+
+### 3. Instalar o scanner
+
+A análise não é executada dentro do container do SonarQube. O container `sonarqube` funciona como servidor e painel web. Quem analisa o código é o `dotnet-sonarscanner`, executado na máquina local junto com o build do projeto.
 
 Caso ainda não tenha o scanner instalado:
 
@@ -264,12 +276,26 @@ Caso ainda não tenha o scanner instalado:
 dotnet tool install --global dotnet-sonarscanner
 ```
 
-Depois de criar um token no SonarQube, a análise pode ser executada com:
+Se o terminal não reconhecer `dotnet sonarscanner`, feche e abra o terminal ou adicione as ferramentas globais ao `PATH`:
 
 ```bash
-dotnet sonarscanner begin /k:"blogsharp" /d:sonar.host.url="http://localhost:9000" /d:sonar.token="<SEU_TOKEN>"
-dotnet build BlogSharp.sln
-dotnet sonarscanner end /d:sonar.token="<SEU_TOKEN>"
+export PATH="$PATH:$HOME/.dotnet/tools"
+```
+
+### 4. Executar a análise
+
+O projeto usa o fluxo oficial do `dotnet-sonarscanner` para aplicações .NET: `begin`, `build` e `end`. As configurações da análise ficam no script `scripts/sonar.sh`, em vez de `sonar-project.properties`, porque o scanner .NET não usa esse arquivo.
+
+Para rodar:
+
+```bash
+./scripts/sonar.sh
+```
+
+Ao final da execução, o relatório fica disponível em:
+
+```text
+http://localhost:9000/dashboard?id=blogsharp
 ```
 
 ## Licença
