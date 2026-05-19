@@ -64,4 +64,4 @@ app.MapGet("/health", () => Results.Ok(new
 
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();

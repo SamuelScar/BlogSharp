@@ -40,19 +40,19 @@ public class PostagemRepository(BlogSharpDbContext context) : IPostagemRepositor
         return postagem;
     }
 
-    public async Task<Postagem?> AtualizarAsync(long id, Postagem dadosPostagem)
+    public async Task<Postagem?> AtualizarAsync(long id, Postagem postagem)
     {
-        var postagemSalva = await context.Postagens.FirstOrDefaultAsync(postagem => postagem.Id == id);
+        var postagemSalva = await context.Postagens.FirstOrDefaultAsync(registro => registro.Id == id);
 
         if (postagemSalva is null)
         {
             return null;
         }
 
-        postagemSalva.Titulo = dadosPostagem.Titulo;
-        postagemSalva.Conteudo = dadosPostagem.Conteudo;
-        postagemSalva.UsuarioId = dadosPostagem.UsuarioId;
-        postagemSalva.TemaId = dadosPostagem.TemaId;
+        postagemSalva.Titulo = postagem.Titulo;
+        postagemSalva.Conteudo = postagem.Conteudo;
+        postagemSalva.UsuarioId = postagem.UsuarioId;
+        postagemSalva.TemaId = postagem.TemaId;
         postagemSalva.DataAtualizacao = DateTime.UtcNow;
 
         await context.SaveChangesAsync();

@@ -11,6 +11,8 @@ namespace BlogSharp.Api.Controllers;
 [Route("api/postagens")]
 public class PostagensController(IPostagemService postagemService) : ControllerBase
 {
+    private const string PostagemNaoEncontrada = "Postagem nao encontrada.";
+
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<PostagemResponse>>> ListarTodas()
     {
@@ -63,7 +65,7 @@ public class PostagensController(IPostagemService postagemService) : ControllerB
 
         if (donoId is null)
         {
-            throw new RecursoNaoEncontradoException("Postagem nao encontrada.");
+            throw new RecursoNaoEncontradoException(PostagemNaoEncontrada);
         }
 
         if (donoId != usuarioId || postagemAtualizacao.UsuarioId != usuarioId)
@@ -75,7 +77,7 @@ public class PostagensController(IPostagemService postagemService) : ControllerB
 
         if (postagem is null)
         {
-            throw new RecursoNaoEncontradoException("Postagem nao encontrada.");
+            throw new RecursoNaoEncontradoException(PostagemNaoEncontrada);
         }
 
         return Ok(postagem);
@@ -96,7 +98,7 @@ public class PostagensController(IPostagemService postagemService) : ControllerB
 
         if (donoId is null)
         {
-            throw new RecursoNaoEncontradoException("Postagem nao encontrada.");
+            throw new RecursoNaoEncontradoException(PostagemNaoEncontrada);
         }
 
         if (donoId != usuarioId && !this.UsuarioEhAdmin())
@@ -108,7 +110,7 @@ public class PostagensController(IPostagemService postagemService) : ControllerB
 
         if (!excluido)
         {
-            throw new RecursoNaoEncontradoException("Postagem nao encontrada.");
+            throw new RecursoNaoEncontradoException(PostagemNaoEncontrada);
         }
 
         return NoContent();

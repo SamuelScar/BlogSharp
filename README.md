@@ -295,8 +295,20 @@ Para rodar:
 Ao final da execução, o relatório fica disponível em:
 
 ```text
-http://localhost:9000/dashboard?id=blogsharp
+http://localhost:9000/dashboard?id=BlogSharp
 ```
+
+### Hotspot do Dockerfile
+
+O SonarQube aponta um hotspot no `Dockerfile` porque a imagem base do SDK .NET pode executar como `root` quando usada isoladamente.
+
+No fluxo atual do projeto, esse risco foi revisado como seguro para o ambiente local, pois a API é executada pelo Docker Compose com o usuário do host:
+
+```yaml
+user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+```
+
+Essa decisão evita alterar o Dockerfile de desenvolvimento sem necessidade e mantém o funcionamento do `dotnet watch` com volume montado. Caso seja criado um Dockerfile de produção, a imagem deve definir um usuário não-root diretamente.
 
 ## Licença
 

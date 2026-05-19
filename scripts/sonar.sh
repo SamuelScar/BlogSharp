@@ -25,7 +25,7 @@ if ! command -v dotnet-sonarscanner >/dev/null 2>&1; then
 fi
 
 dotnet-sonarscanner begin \
-  /k:"blogsharp" \
+  /k:"BlogSharp" \
   /n:"BlogSharp" \
   /d:sonar.host.url="http://localhost:9000" \
   /d:sonar.login="$SONAR_TOKEN" \
