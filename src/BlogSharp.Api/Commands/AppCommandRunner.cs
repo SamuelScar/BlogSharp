@@ -18,17 +18,36 @@ public static class AppCommandRunner
 
     private static async Task ExecutarSeedAsync(string[] args, IServiceProvider services)
     {
-        if (args.Length != 3 ||
-            !args[1].Equals("usuarios", StringComparison.OrdinalIgnoreCase) ||
-            !int.TryParse(args[2], out var quantidade))
+        if (args.Length != 3 || !int.TryParse(args[2], out var quantidade))
         {
-            Console.WriteLine("Uso: dotnet run -- seed usuarios <quantidade>");
+            ExibirUsoSeed();
             return;
         }
 
-        var registrosCriados = await services.SeedUsuariosAleatoriosAsync(quantidade);
+        if (args[1].Equals("usuarios", StringComparison.OrdinalIgnoreCase))
+        {
+            var registrosCriados = await services.SeedUsuariosAleatoriosAsync(quantidade);
 
-        Console.WriteLine($"{registrosCriados} usuarios gerados com sucesso.");
-        Console.WriteLine("Senha padrao dos usuarios gerados: Senha@123");
+            Console.WriteLine($"{registrosCriados} usuarios gerados com sucesso.");
+            Console.WriteLine("Senha padrao dos usuarios gerados: Senha@123");
+            return;
+        }
+
+        if (args[1].Equals("temas", StringComparison.OrdinalIgnoreCase))
+        {
+            var registrosCriados = await services.SeedTemasAleatoriosAsync(quantidade);
+
+            Console.WriteLine($"{registrosCriados} temas gerados com sucesso.");
+            return;
+        }
+
+        ExibirUsoSeed();
+    }
+
+    private static void ExibirUsoSeed()
+    {
+        Console.WriteLine("Uso:");
+        Console.WriteLine("  dotnet run -- seed usuarios <quantidade>");
+        Console.WriteLine("  dotnet run -- seed temas <quantidade>");
     }
 }

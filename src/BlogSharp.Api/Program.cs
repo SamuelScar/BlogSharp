@@ -13,6 +13,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<BlogSharpDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped<ITemaRepository, TemaRepository>();
+builder.Services.AddScoped<ITemaService, TemaService>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
@@ -34,6 +36,7 @@ if (await AppCommandRunner.ExecutarAsync(args, app.Services))
 if (app.Environment.IsDevelopment())
 {
     await app.Services.SeedUsuariosAsync();
+    await app.Services.SeedTemasAsync();
 
     app.UseSwagger();
     app.UseSwaggerUI();

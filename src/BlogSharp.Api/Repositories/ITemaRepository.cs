@@ -8,7 +8,7 @@ public interface ITemaRepository
 
     Task<Tema> CadastrarAsync(Tema tema);
 
-    Task<Tema?> AtualizarAsync(long id, Tema tema);
+    Task<bool> AtualizarAsync(long id, string descricao);
 
     Task<bool> ExcluirAsync(long id);
 }

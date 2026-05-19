@@ -1,14 +1,14 @@
-using BlogSharp.Api.Models;
+using BlogSharp.Api.DTOs;
 
 namespace BlogSharp.Api.Services;
 
 public interface ITemaService
 {
-    Task<IReadOnlyList<Tema>> ListarTodosAsync();
+    Task<IReadOnlyList<TemaResponse>> ListarTodosAsync();
 
-    Task<Tema> CadastrarAsync(Tema tema);
+    Task<TemaResponse> CadastrarAsync(TemaCadastro temaCadastro);
 
-    Task<Tema?> AtualizarAsync(long id, Tema tema);
+    Task<TemaResponse?> AtualizarAsync(long id, TemaAtualizacao temaAtualizacao);
 
     Task<bool> ExcluirAsync(long id);
 }
