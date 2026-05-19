@@ -1,6 +1,8 @@
 using BlogSharp.Api.DTOs;
+using BlogSharp.Api.Exceptions;
 using BlogSharp.Api.Models;
 using BlogSharp.Api.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlogSharp.Api.Services;
 
@@ -43,7 +45,14 @@ public class TemaService(ITemaRepository temaRepository) : ITemaService
 
     public async Task<bool> ExcluirAsync(long id)
     {
-        return await temaRepository.ExcluirAsync(id);
+        try
+        {
+            return await temaRepository.ExcluirAsync(id);
+        }
+        catch (DbUpdateException ex)
+        {
+            throw new ConflitoException("Tema possui postagens vinculadas.", ex);
+        }
     }
 
     private static TemaResponse MapearResponse(Tema tema)

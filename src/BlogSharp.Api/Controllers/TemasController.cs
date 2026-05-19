@@ -1,8 +1,8 @@
 using BlogSharp.Api.DTOs;
+using BlogSharp.Api.Exceptions;
 using BlogSharp.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace BlogSharp.Api.Controllers;
 
@@ -33,22 +33,25 @@ public class TemasController(ITemaService temaService) : ControllerBase
     {
         var tema = await temaService.AtualizarAsync(id, temaAtualizacao);
 
-        return tema is null ? NotFound(new { mensagem = "Tema nao encontrado." }) : Ok(tema);
+        if (tema is null)
+        {
+            throw new RecursoNaoEncontradoException("Tema nao encontrado.");
+        }
+
+        return Ok(tema);
     }
 
     [Authorize(Roles = "Admin")]
     [HttpDelete("{id:long}")]
     public async Task<IActionResult> Excluir(long id)
     {
-        try
-        {
-            var excluido = await temaService.ExcluirAsync(id);
+        var excluido = await temaService.ExcluirAsync(id);
 
-            return excluido ? NoContent() : NotFound(new { mensagem = "Tema nao encontrado." });
-        }
-        catch (DbUpdateException)
+        if (!excluido)
         {
-            return Conflict(new { mensagem = "Tema possui postagens vinculadas." });
+            throw new RecursoNaoEncontradoException("Tema nao encontrado.");
         }
+
+        return NoContent();
     }
 }

@@ -2,6 +2,7 @@ using BlogSharp.Api.Commands;
 using BlogSharp.Api.Config;
 using BlogSharp.Api.Data;
 using BlogSharp.Api.Data.Seeders;
+using BlogSharp.Api.Middlewares;
 using BlogSharp.Api.Models;
 using BlogSharp.Api.Repositories;
 using BlogSharp.Api.Services;
@@ -40,7 +41,12 @@ if (app.Environment.IsDevelopment())
     await app.Services.SeedUsuariosAsync();
     await app.Services.SeedTemasAsync();
     await app.Services.SeedPostagensAsync();
+}
 
+app.UseMiddleware<ExceptionMiddleware>();
+
+if (app.Environment.IsDevelopment())
+{
     app.UseSwagger();
     app.UseSwaggerUI();
 }

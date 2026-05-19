@@ -1,4 +1,5 @@
 using BlogSharp.Api.DTOs;
+using BlogSharp.Api.Exceptions;
 using BlogSharp.Api.Models;
 using BlogSharp.Api.Repositories;
 using BlogSharp.Api.Services;
@@ -60,7 +61,7 @@ public class UsuarioServiceTests
             Tipo = "Usuario"
         };
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CadastrarAsync(usuarioCadastro));
+        var exception = await Assert.ThrowsAsync<ConflitoException>(() => service.CadastrarAsync(usuarioCadastro));
 
         Assert.Equal("Email ja cadastrado.", exception.Message);
     }

@@ -149,9 +149,17 @@ Temas são administrados apenas por usuários do tipo `Admin`.
 
 As regras que precisam ler o usuário autenticado usam o helper `AuthUserExtensions`, em `Security/`. Ele não substitui o middleware de autenticação: o middleware valida o JWT e monta o usuário da requisição, enquanto o helper apenas lê o `Id` e o perfil `Admin` já presentes no token. O PDF define a estrutura base do projeto, mas não proíbe uma pasta auxiliar para organizar regras de segurança.
 
-## Melhorias futuras
+## Tratamento de Erros
 
-Uma melhoria planejada é criar um middleware global de exceções para padronizar as respostas de erro da API e reduzir `try/catch` repetido nos controllers.
+O projeto usa `ErroResponse` para padronizar respostas de erro com o campo `mensagem`. Erros esperados de regra de negócio são lançados como exceções específicas e convertidos pelo `ExceptionMiddleware` para códigos HTTP coerentes, como `404 Not Found` e `409 Conflict`.
+
+Erros inesperados também são capturados pelo `ExceptionMiddleware` e retornam:
+
+```json
+{
+  "mensagem": "Erro interno no servidor."
+}
+```
 
 ## Testes
 

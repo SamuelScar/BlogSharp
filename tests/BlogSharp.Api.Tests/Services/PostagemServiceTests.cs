@@ -1,4 +1,5 @@
 using BlogSharp.Api.DTOs;
+using BlogSharp.Api.Exceptions;
 using BlogSharp.Api.Models;
 using BlogSharp.Api.Repositories;
 using BlogSharp.Api.Services;
@@ -111,7 +112,7 @@ public class PostagemServiceTests
             TemaId = 1
         };
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<RecursoNaoEncontradoException>(
             () => service.CadastrarAsync(postagemCadastro));
 
         Assert.Equal("Usuario nao encontrado.", exception.Message);
@@ -132,7 +133,7 @@ public class PostagemServiceTests
             TemaId = 99
         };
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<RecursoNaoEncontradoException>(
             () => service.CadastrarAsync(postagemCadastro));
 
         Assert.Equal("Tema nao encontrado.", exception.Message);

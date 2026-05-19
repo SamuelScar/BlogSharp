@@ -1,4 +1,5 @@
 using BlogSharp.Api.DTOs;
+using BlogSharp.Api.Exceptions;
 using BlogSharp.Api.Security;
 using BlogSharp.Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -34,7 +35,7 @@ public class PostagensController(IPostagemService postagemService) : ControllerB
 
         if (usuarioId is null)
         {
-            return Unauthorized(new { mensagem = "Token invalido." });
+            return Unauthorized(new ErroResponse("Token invalido."));
         }
 
         if (postagemCadastro.UsuarioId != usuarioId)
@@ -42,16 +43,9 @@ public class PostagensController(IPostagemService postagemService) : ControllerB
             return Forbid();
         }
 
-        try
-        {
-            var postagem = await postagemService.CadastrarAsync(postagemCadastro);
+        var postagem = await postagemService.CadastrarAsync(postagemCadastro);
 
-            return StatusCode(StatusCodes.Status201Created, postagem);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(new { mensagem = ex.Message });
-        }
+        return StatusCode(StatusCodes.Status201Created, postagem);
     }
 
     [Authorize]
@@ -62,14 +56,14 @@ public class PostagensController(IPostagemService postagemService) : ControllerB
 
         if (usuarioId is null)
         {
-            return Unauthorized(new { mensagem = "Token invalido." });
+            return Unauthorized(new ErroResponse("Token invalido."));
         }
 
         var donoId = await postagemService.BuscarUsuarioIdAsync(id);
 
         if (donoId is null)
         {
-            return NotFound(new { mensagem = "Postagem nao encontrada." });
+            throw new RecursoNaoEncontradoException("Postagem nao encontrada.");
         }
 
         if (donoId != usuarioId || postagemAtualizacao.UsuarioId != usuarioId)
@@ -77,16 +71,14 @@ public class PostagensController(IPostagemService postagemService) : ControllerB
             return Forbid();
         }
 
-        try
-        {
-            var postagem = await postagemService.AtualizarAsync(id, postagemAtualizacao);
+        var postagem = await postagemService.AtualizarAsync(id, postagemAtualizacao);
 
-            return postagem is null ? NotFound(new { mensagem = "Postagem nao encontrada." }) : Ok(postagem);
-        }
-        catch (InvalidOperationException ex)
+        if (postagem is null)
         {
-            return NotFound(new { mensagem = ex.Message });
+            throw new RecursoNaoEncontradoException("Postagem nao encontrada.");
         }
+
+        return Ok(postagem);
     }
 
     [Authorize]
@@ -97,14 +89,14 @@ public class PostagensController(IPostagemService postagemService) : ControllerB
 
         if (usuarioId is null)
         {
-            return Unauthorized(new { mensagem = "Token invalido." });
+            return Unauthorized(new ErroResponse("Token invalido."));
         }
 
         var donoId = await postagemService.BuscarUsuarioIdAsync(id);
 
         if (donoId is null)
         {
-            return NotFound(new { mensagem = "Postagem nao encontrada." });
+            throw new RecursoNaoEncontradoException("Postagem nao encontrada.");
         }
 
         if (donoId != usuarioId && !this.UsuarioEhAdmin())
@@ -114,6 +106,11 @@ public class PostagensController(IPostagemService postagemService) : ControllerB
 
         var excluido = await postagemService.ExcluirAsync(id);
 
-        return excluido ? NoContent() : NotFound(new { mensagem = "Postagem nao encontrada." });
+        if (!excluido)
+        {
+            throw new RecursoNaoEncontradoException("Postagem nao encontrada.");
+        }
+
+        return NoContent();
     }
 }

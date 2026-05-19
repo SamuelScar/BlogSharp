@@ -1,4 +1,5 @@
 using BlogSharp.Api.DTOs;
+using BlogSharp.Api.Exceptions;
 using BlogSharp.Api.Models;
 using BlogSharp.Api.Repositories;
 
@@ -68,12 +69,12 @@ public class PostagemService(IPostagemRepository postagemRepository) : IPostagem
     {
         if (!await postagemRepository.UsuarioExisteAsync(usuarioId))
         {
-            throw new InvalidOperationException("Usuario nao encontrado.");
+            throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
         }
 
         if (!await postagemRepository.TemaExisteAsync(temaId))
         {
-            throw new InvalidOperationException("Tema nao encontrado.");
+            throw new RecursoNaoEncontradoException("Tema nao encontrado.");
         }
     }
 

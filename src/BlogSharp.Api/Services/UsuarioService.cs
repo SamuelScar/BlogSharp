@@ -1,4 +1,5 @@
 using BlogSharp.Api.DTOs;
+using BlogSharp.Api.Exceptions;
 using BlogSharp.Api.Models;
 using BlogSharp.Api.Repositories;
 using Microsoft.AspNetCore.Identity;
@@ -17,7 +18,7 @@ public class UsuarioService(
 
         if (emailCadastrado is not null)
         {
-            throw new InvalidOperationException("Email ja cadastrado.");
+            throw new ConflitoException("Email ja cadastrado.");
         }
 
         var usuario = new Usuario
@@ -30,9 +31,16 @@ public class UsuarioService(
 
         usuario.SenhaHash = passwordHasher.HashPassword(usuario, usuarioCadastro.Senha);
 
-        var usuarioCadastrado = await usuarioRepository.CadastrarAsync(usuario);
+        try
+        {
+            var usuarioCadastrado = await usuarioRepository.CadastrarAsync(usuario);
 
-        return MapearResponse(usuarioCadastrado);
+            return MapearResponse(usuarioCadastrado);
+        }
+        catch (DbUpdateException ex)
+        {
+            throw new ConflitoException("Email ja cadastrado.", ex);
+        }
     }
 
     public async Task<UsuarioResponse?> AtualizarAsync(long id, UsuarioAtualizacao usuarioAtualizacao)
@@ -60,13 +68,20 @@ public class UsuarioService(
         }
         catch (DbUpdateException ex)
         {
-            throw new InvalidOperationException("Email ja cadastrado.", ex);
+            throw new ConflitoException("Email ja cadastrado.", ex);
         }
     }
 
     public async Task<bool> ExcluirAsync(long id)
     {
-        return await usuarioRepository.ExcluirAsync(id);
+        try
+        {
+            return await usuarioRepository.ExcluirAsync(id);
+        }
+        catch (DbUpdateException ex)
+        {
+            throw new ConflitoException("Usuario possui postagens vinculadas.", ex);
+        }
     }
 
     public async Task<UsuarioLoginResponse?> AutenticarAsync(UsuarioLogin usuarioLogin)
