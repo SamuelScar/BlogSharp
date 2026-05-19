@@ -9,14 +9,6 @@ namespace BlogSharp.Api.Controllers;
 [Route("api/usuarios")]
 public class UsuariosController(IUsuarioService usuarioService) : ControllerBase
 {
-    [HttpGet("{id:long}")]
-    public async Task<ActionResult<UsuarioResponse>> BuscarPorId(long id)
-    {
-        var usuario = await usuarioService.BuscarPorIdAsync(id);
-
-        return usuario is null ? NotFound(new { mensagem = "Usuario nao encontrado." }) : Ok(usuario);
-    }
-
     [HttpPost("cadastrar")]
     public async Task<ActionResult<UsuarioResponse>> Cadastrar(UsuarioCadastro usuarioCadastro)
     {
@@ -24,7 +16,7 @@ public class UsuariosController(IUsuarioService usuarioService) : ControllerBase
         {
             var usuario = await usuarioService.CadastrarAsync(usuarioCadastro);
 
-            return CreatedAtAction(nameof(BuscarPorId), new { id = usuario.Id }, usuario);
+            return StatusCode(StatusCodes.Status201Created, usuario);
         }
         catch (InvalidOperationException ex)
         {

@@ -102,9 +102,41 @@ public class UsuarioServiceTests
     }
 
     [Fact]
+    public async Task AtualizarAsync_DeveManterSenhaQuandoSenhaNaoForInformada()
+    {
+        var repository = new FakeUsuarioRepository();
+        var passwordHasher = new PasswordHasher<Usuario>();
+        var usuario = new Usuario
+        {
+            Nome = "Nome Antigo",
+            Email = "antigo@email.com",
+            Tipo = "Usuario"
+        };
+        usuario.SenhaHash = passwordHasher.HashPassword(usuario, "123456");
+        repository.AdicionarUsuario(usuario);
+        var senhaHashOriginal = usuario.SenhaHash;
+        var service = CriarService(repository);
+        var usuarioAtualizacao = new UsuarioAtualizacao
+        {
+            Nome = "Nome Novo",
+            Email = "novo@email.com",
+            Tipo = "Admin"
+        };
+
+        var response = await service.AtualizarAsync(usuario.Id, usuarioAtualizacao);
+
+        Assert.NotNull(response);
+        Assert.Equal(usuarioAtualizacao.Nome, response!.Nome);
+        Assert.Equal(usuarioAtualizacao.Email, response.Email);
+        Assert.Equal(usuarioAtualizacao.Tipo, response.Tipo);
+        Assert.Equal(senhaHashOriginal, usuario.SenhaHash);
+    }
+
+    [Fact]
     public async Task AtualizarAsync_DeveRetornarNullQuandoUsuarioNaoExiste()
     {
-        var service = CriarService(new FakeUsuarioRepository());
+        var repository = new FakeUsuarioRepository();
+        var service = CriarService(repository);
         var usuarioAtualizacao = new UsuarioAtualizacao
         {
             Nome = "Nome",
@@ -133,7 +165,18 @@ public class UsuarioServiceTests
         var excluido = await service.ExcluirAsync(usuario.Id);
 
         Assert.True(excluido);
-        Assert.Null(await repository.BuscarPorIdAsync(usuario.Id));
+        Assert.False(repository.Existe(usuario.Id));
+    }
+
+    [Fact]
+    public async Task ExcluirAsync_DeveRetornarFalseQuandoUsuarioNaoExiste()
+    {
+        var repository = new FakeUsuarioRepository();
+        var service = CriarService(repository);
+
+        var excluido = await service.ExcluirAsync(99);
+
+        Assert.False(excluido);
     }
 
     [Fact]
@@ -203,11 +246,6 @@ public class UsuarioServiceTests
         private readonly List<Usuario> usuarios = [];
         private long proximoId = 1;
 
-        public Task<Usuario?> BuscarPorIdAsync(long id)
-        {
-            return Task.FromResult(usuarios.FirstOrDefault(usuario => usuario.Id == id));
-        }
-
         public Task<Usuario?> BuscarPorEmailAsync(string email)
         {
             return Task.FromResult(usuarios.FirstOrDefault(usuario => usuario.Email == email));
@@ -220,16 +258,40 @@ public class UsuarioServiceTests
             return Task.FromResult(usuario);
         }
 
-        public Task<Usuario> AtualizarAsync(Usuario usuario)
+        public Task<bool> AtualizarAsync(long id, Usuario usuarioAtualizado, bool atualizarSenha)
         {
-            return Task.FromResult(usuario);
+            var usuario = usuarios.FirstOrDefault(usuario => usuario.Id == id);
+
+            if (usuario is null)
+            {
+                return Task.FromResult(false);
+            }
+
+            usuario.Nome = usuarioAtualizado.Nome;
+            usuario.Email = usuarioAtualizado.Email;
+            usuario.Tipo = usuarioAtualizado.Tipo;
+            usuario.Foto = usuarioAtualizado.Foto;
+
+            if (atualizarSenha)
+            {
+                usuario.SenhaHash = usuarioAtualizado.SenhaHash;
+            }
+
+            return Task.FromResult(true);
         }
 
-        public Task ExcluirAsync(Usuario usuario)
+        public Task<bool> ExcluirAsync(long id)
         {
+            var usuario = usuarios.FirstOrDefault(usuario => usuario.Id == id);
+
+            if (usuario is null)
+            {
+                return Task.FromResult(false);
+            }
+
             usuarios.Remove(usuario);
 
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
         public Usuario AdicionarUsuario(Usuario usuario)
@@ -238,6 +300,11 @@ public class UsuarioServiceTests
             usuarios.Add(usuario);
 
             return usuario;
+        }
+
+        public bool Existe(long id)
+        {
+            return usuarios.Any(usuario => usuario.Id == id);
         }
     }
 

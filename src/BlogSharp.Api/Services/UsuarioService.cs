@@ -2,6 +2,7 @@ using BlogSharp.Api.DTOs;
 using BlogSharp.Api.Models;
 using BlogSharp.Api.Repositories;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlogSharp.Api.Services;
 
@@ -10,13 +11,6 @@ public class UsuarioService(
     IPasswordHasher<Usuario> passwordHasher,
     ITokenService tokenService) : IUsuarioService
 {
-    public async Task<UsuarioResponse?> BuscarPorIdAsync(long id)
-    {
-        var usuario = await usuarioRepository.BuscarPorIdAsync(id);
-
-        return usuario is null ? null : MapearResponse(usuario);
-    }
-
     public async Task<UsuarioResponse> CadastrarAsync(UsuarioCadastro usuarioCadastro)
     {
         var emailCadastrado = await usuarioRepository.BuscarPorEmailAsync(usuarioCadastro.Email);
@@ -43,47 +37,36 @@ public class UsuarioService(
 
     public async Task<UsuarioResponse?> AtualizarAsync(long id, UsuarioAtualizacao usuarioAtualizacao)
     {
-        var usuario = await usuarioRepository.BuscarPorIdAsync(id);
-
-        if (usuario is null)
+        var usuario = new Usuario
         {
-            return null;
+            Id = id,
+            Nome = usuarioAtualizacao.Nome,
+            Email = usuarioAtualizacao.Email,
+            Tipo = usuarioAtualizacao.Tipo,
+            Foto = usuarioAtualizacao.Foto
+        };
+        var atualizarSenha = !string.IsNullOrWhiteSpace(usuarioAtualizacao.Senha);
+
+        if (atualizarSenha)
+        {
+            usuario.SenhaHash = passwordHasher.HashPassword(usuario, usuarioAtualizacao.Senha!);
         }
 
-        var emailCadastrado = await usuarioRepository.BuscarPorEmailAsync(usuarioAtualizacao.Email);
-
-        if (emailCadastrado is not null && emailCadastrado.Id != id)
+        try
         {
-            throw new InvalidOperationException("Email ja cadastrado.");
+            var atualizado = await usuarioRepository.AtualizarAsync(id, usuario, atualizarSenha);
+
+            return atualizado ? MapearResponse(usuario) : null;
         }
-
-        usuario.Nome = usuarioAtualizacao.Nome;
-        usuario.Email = usuarioAtualizacao.Email;
-        usuario.Tipo = usuarioAtualizacao.Tipo;
-        usuario.Foto = usuarioAtualizacao.Foto;
-
-        if (!string.IsNullOrWhiteSpace(usuarioAtualizacao.Senha))
+        catch (DbUpdateException ex)
         {
-            usuario.SenhaHash = passwordHasher.HashPassword(usuario, usuarioAtualizacao.Senha);
+            throw new InvalidOperationException("Email ja cadastrado.", ex);
         }
-
-        var usuarioAtualizado = await usuarioRepository.AtualizarAsync(usuario);
-
-        return MapearResponse(usuarioAtualizado);
     }
 
     public async Task<bool> ExcluirAsync(long id)
     {
-        var usuario = await usuarioRepository.BuscarPorIdAsync(id);
-
-        if (usuario is null)
-        {
-            return false;
-        }
-
-        await usuarioRepository.ExcluirAsync(usuario);
-
-        return true;
+        return await usuarioRepository.ExcluirAsync(id);
     }
 
     public async Task<UsuarioLoginResponse?> AutenticarAsync(UsuarioLogin usuarioLogin)

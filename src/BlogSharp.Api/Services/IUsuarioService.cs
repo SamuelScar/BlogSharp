@@ -4,8 +4,6 @@ namespace BlogSharp.Api.Services;
 
 public interface IUsuarioService
 {
-    Task<UsuarioResponse?> BuscarPorIdAsync(long id);
-
     Task<UsuarioResponse> CadastrarAsync(UsuarioCadastro usuarioCadastro);
 
     Task<UsuarioResponse?> AtualizarAsync(long id, UsuarioAtualizacao usuarioAtualizacao);
