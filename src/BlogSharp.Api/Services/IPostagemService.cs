@@ -13,4 +13,6 @@ public interface IPostagemService
     Task<PostagemResponse?> AtualizarAsync(long id, PostagemAtualizacao postagemAtualizacao);
 
     Task<bool> ExcluirAsync(long id);
+
+    Task<long?> BuscarUsuarioIdAsync(long id);
 }

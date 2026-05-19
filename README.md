@@ -137,6 +137,18 @@ O token JWT do usuário guarda apenas dados úteis para identificação e autori
 
 Dados sensíveis, como senha ou hash da senha, não devem entrar no token. O objetivo é manter o JWT suficiente para validar a identidade do usuário sem transformar o token em uma cópia completa do cadastro.
 
+## Regras de Acesso
+
+As rotas de cadastro, login, listagem de temas e listagem/filtro de postagens são públicas. As rotas que alteram cadastros existentes, postagens ou temas exigem autenticação.
+
+Usuários podem atualizar e excluir o próprio cadastro. Administradores podem excluir qualquer usuário, mas não podem alterar dados pessoais de outros usuários.
+
+Postagens só podem ser criadas e atualizadas pelo próprio dono. Administradores não podem alterar o texto de postagens de outros usuários, mas podem excluir qualquer postagem para moderação.
+
+Temas são administrados apenas por usuários do tipo `Admin`.
+
+As regras que precisam ler o usuário autenticado usam o helper `AuthUserExtensions`, em `Security/`. Ele não substitui o middleware de autenticação: o middleware valida o JWT e monta o usuário da requisição, enquanto o helper apenas lê o `Id` e o perfil `Admin` já presentes no token. O PDF define a estrutura base do projeto, mas não proíbe uma pasta auxiliar para organizar regras de segurança.
+
 ## Melhorias futuras
 
 Uma melhoria planejada é criar um middleware global de exceções para padronizar as respostas de erro da API e reduzir `try/catch` repetido nos controllers.

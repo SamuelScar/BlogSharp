@@ -1,5 +1,6 @@
 using BlogSharp.Api.DTOs;
 using BlogSharp.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,7 @@ public class TemasController(ITemaService temaService) : ControllerBase
         return Ok(temas);
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<ActionResult<TemaResponse>> Cadastrar(TemaCadastro temaCadastro)
     {
@@ -25,6 +27,7 @@ public class TemasController(ITemaService temaService) : ControllerBase
         return StatusCode(StatusCodes.Status201Created, tema);
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPut("{id:long}")]
     public async Task<ActionResult<TemaResponse>> Atualizar(long id, TemaAtualizacao temaAtualizacao)
     {
@@ -33,6 +36,7 @@ public class TemasController(ITemaService temaService) : ControllerBase
         return tema is null ? NotFound(new { mensagem = "Tema nao encontrado." }) : Ok(tema);
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id:long}")]
     public async Task<IActionResult> Excluir(long id)
     {

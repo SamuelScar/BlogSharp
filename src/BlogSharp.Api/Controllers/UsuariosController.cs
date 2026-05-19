@@ -1,5 +1,7 @@
 using BlogSharp.Api.DTOs;
+using BlogSharp.Api.Security;
 using BlogSharp.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,9 +26,15 @@ public class UsuariosController(IUsuarioService usuarioService) : ControllerBase
         }
     }
 
+    [Authorize]
     [HttpPut("{id:long}")]
     public async Task<ActionResult<UsuarioResponse>> Atualizar(long id, UsuarioAtualizacao usuarioAtualizacao)
     {
+        if (!UsuarioEhDono(id))
+        {
+            return Forbid();
+        }
+
         try
         {
             var usuario = await usuarioService.AtualizarAsync(id, usuarioAtualizacao);
@@ -39,9 +47,15 @@ public class UsuariosController(IUsuarioService usuarioService) : ControllerBase
         }
     }
 
+    [Authorize]
     [HttpDelete("{id:long}")]
     public async Task<IActionResult> Excluir(long id)
     {
+        if (!PodeExcluirUsuario(id))
+        {
+            return Forbid();
+        }
+
         try
         {
             var excluido = await usuarioService.ExcluirAsync(id);
@@ -62,5 +76,15 @@ public class UsuariosController(IUsuarioService usuarioService) : ControllerBase
         return usuarioAutenticado is null
             ? Unauthorized(new { mensagem = "Email ou senha invalidos." })
             : Ok(usuarioAutenticado);
+    }
+
+    private bool UsuarioEhDono(long id)
+    {
+        return this.ObterUsuarioId() == id;
+    }
+
+    private bool PodeExcluirUsuario(long id)
+    {
+        return this.UsuarioEhAdmin() || this.ObterUsuarioId() == id;
     }
 }

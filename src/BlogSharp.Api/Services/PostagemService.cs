@@ -59,6 +59,11 @@ public class PostagemService(IPostagemRepository postagemRepository) : IPostagem
         return await postagemRepository.ExcluirAsync(id);
     }
 
+    public async Task<long?> BuscarUsuarioIdAsync(long id)
+    {
+        return await postagemRepository.BuscarUsuarioIdAsync(id);
+    }
+
     private async Task ValidarRelacionamentosAsync(long usuarioId, long temaId)
     {
         if (!await postagemRepository.UsuarioExisteAsync(usuarioId))

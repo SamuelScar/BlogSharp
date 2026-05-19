@@ -14,6 +14,8 @@ public interface IPostagemRepository
 
     Task<bool> ExcluirAsync(long id);
 
+    Task<long?> BuscarUsuarioIdAsync(long id);
+
     Task<bool> UsuarioExisteAsync(long usuarioId);
 
     Task<bool> TemaExisteAsync(long temaId);

@@ -320,6 +320,16 @@ public class PostagemServiceTests
             return Task.FromResult(true);
         }
 
+        public Task<long?> BuscarUsuarioIdAsync(long id)
+        {
+            var usuarioId = postagens
+                .Where(postagem => postagem.Id == id)
+                .Select(postagem => (long?)postagem.UsuarioId)
+                .FirstOrDefault();
+
+            return Task.FromResult(usuarioId);
+        }
+
         public Task<bool> UsuarioExisteAsync(long usuarioId)
         {
             return Task.FromResult(usuarios.Contains(usuarioId));

@@ -69,6 +69,14 @@ public class PostagemRepository(BlogSharpDbContext context) : IPostagemRepositor
         return registrosExcluidos > 0;
     }
 
+    public async Task<long?> BuscarUsuarioIdAsync(long id)
+    {
+        return await context.Postagens
+            .Where(postagem => postagem.Id == id)
+            .Select(postagem => (long?)postagem.UsuarioId)
+            .FirstOrDefaultAsync();
+    }
+
     public Task<bool> UsuarioExisteAsync(long usuarioId)
     {
         return context.Usuarios.AnyAsync(usuario => usuario.Id == usuarioId);
