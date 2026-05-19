@@ -6,11 +6,8 @@ O projeto será evoluído em camadas, com persistência de dados, autenticação
 ## Sumário
 
 - [Como rodar o projeto](#como-rodar-o-projeto)
-- [Funcionalidades atuais](#funcionalidades-atuais)
-- [Estrutura do projeto](#estrutura-do-projeto)
 - [Tecnologias utilizadas](#tecnologias-utilizadas)
 - [Banco de dados](#banco-de-dados)
-- [Endpoints da API](#endpoints-da-api)
 - [Testes](#testes)
 - [Seeders](#seeders)
 - [SonarQube](#sonarqube)
@@ -85,39 +82,6 @@ Para encerrar o ambiente:
 docker compose down
 ```
 
-## Funcionalidades atuais
-
-- API ASP.NET Core 8 com Swagger em ambiente de desenvolvimento.
-- PostgreSQL via Docker Compose.
-- Entity Framework Core com migrations.
-- CRUD de usuários.
-- Login com validação de email e senha.
-- Geração de JWT.
-- Senhas armazenadas com `PasswordHasher`.
-- DTOs separados para entrada e resposta da API.
-- Seeders fixos e dinâmicos para usuários.
-- Testes unitários do `UsuarioService`.
-- SonarQube local em profile separado.
-
-## Estrutura do projeto
-
-```text
-src/BlogSharp.Api/
-├── Config/
-├── Controllers/
-├── Data/
-├── DTOs/
-├── Middlewares/
-├── Migrations/
-├── Models/
-├── Repositories/
-├── Services/
-└── Program.cs
-
-tests/BlogSharp.Api.Tests/
-└── Services/
-```
-
 ## Tecnologias utilizadas
 
 - C# / .NET 8
@@ -160,45 +124,6 @@ As validações de entrada também devem ser reforçadas nos DTOs, porque eles r
 
 No CRUD de usuários, os DTOs foram separados conforme o formato necessário em cada chamada. Criamos DTOs de entrada para cadastro, atualização e login, e reutilizamos `UsuarioResponse` nas chamadas que retornam os mesmos dados públicos do usuário. Uma resposta separada só foi criada quando a saída muda da entrada, como em `UsuarioLoginResponse`, que também retorna o token JWT.
 
-## Endpoints da API
-
-Com a API em execução, a documentação interativa fica disponível em:
-
-```text
-http://localhost:5000/swagger/index.html
-```
-
-Endpoints atuais de usuários:
-
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| `GET` | `/api/usuarios/{id}` | Busca usuário por id |
-| `POST` | `/api/usuarios/cadastrar` | Cadastra novo usuário |
-| `PUT` | `/api/usuarios/{id}` | Atualiza dados do usuário |
-| `DELETE` | `/api/usuarios/{id}` | Exclui usuário |
-| `POST` | `/api/usuarios/login` | Autentica usuário e retorna JWT |
-
-Exemplo de cadastro:
-
-```json
-{
-  "nome": "Samuel Teste",
-  "email": "samuel.teste@email.com",
-  "senha": "123456",
-  "tipo": "Usuario",
-  "foto": "https://avatars.githubusercontent.com/u/9919?s=200&v=4"
-}
-```
-
-Exemplo de login:
-
-```json
-{
-  "email": "samuel.teste@email.com",
-  "senha": "123456"
-}
-```
-
 ## Autenticação JWT
 
 O token JWT do usuário guarda apenas dados úteis para identificação e autorização. Usamos o `Id` como identificador principal do usuário autenticado, o `Email` e o `Nome` como informações de contexto, e o `Tipo` como perfil de acesso para permitir regras futuras como rotas restritas a administradores.
@@ -211,7 +136,7 @@ Uma melhoria planejada é criar um middleware global de exceções para padroniz
 
 ## Testes
 
-Os testes unitários ficam em `tests/BlogSharp.Api.Tests` e cobrem as regras principais do `UsuarioService`, usando fakes simples para repository e token.
+Os testes unitários ficam em `tests/BlogSharp.Api.Tests` e cobrem as regras principais do `UsuarioService` e do `TemaService`, usando fakes simples para repositories e token.
 
 Para executar:
 
@@ -221,7 +146,7 @@ dotnet test BlogSharp.sln
 
 ## Seeders
 
-O projeto usa dois modos de seeder para usuários.
+O projeto usa seeders para facilitar testes locais com dados mínimos.
 
 O primeiro modo é o seeder fixo automático. Ele roda quando a API inicia em ambiente de desenvolvimento. A migration não chama o seeder; é o seeder que aplica migrations pendentes antes de inserir os dados iniciais.
 
@@ -229,9 +154,10 @@ Fluxo ao subir a API:
 
 ```text
 API iniciou em Development
-Seeder de usuários executa
+Seeders fixos executam
 Migrations pendentes são aplicadas
 Usuários fixos são criados se os emails ainda não existirem
+Tema fixo é criado se ainda não existir
 ```
 
 Usuários disponíveis para testes:
@@ -241,13 +167,22 @@ Usuários disponíveis para testes:
 | Admin | `admin@blogsharp.com` | `Admin@123` |
 | Usuario | `usuario@blogsharp.com` | `Usuario@123` |
 
-O segundo modo é o seeder dinâmico manual. Ele deve ser executado pela linha de comando quando for necessário criar uma massa maior de usuários para simular uso real:
+Tema inicial disponível para testes:
+
+```text
+Tecnologia
+```
+
+O segundo modo é o seeder dinâmico manual. Ele deve ser executado pela linha de comando quando for necessário criar uma massa maior de usuários ou temas para simular uso real:
 
 ```bash
 docker compose exec api dotnet run -- seed usuarios 10
+docker compose exec api dotnet run -- seed temas 5
 ```
 
 O número final define quantos usuários serão criados. Os usuários aleatórios usam emails únicos no domínio `seed.blogsharp.local`, tipo `Usuario` ou `Admin`, foto como URL e senha padrão `Senha@123`.
+
+No caso de temas, o número final define quantos temas serão criados. As descrições são geradas com base em nomes simples, como `Tecnologia`, `Programacao`, `Backend` e `Dotnet`, com um sufixo único para evitar duplicação.
 
 ## Operações Assíncronas
 
