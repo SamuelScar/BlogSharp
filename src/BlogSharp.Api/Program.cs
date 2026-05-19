@@ -17,6 +17,8 @@ builder.Services.AddScoped<ITemaRepository, TemaRepository>();
 builder.Services.AddScoped<ITemaService, TemaService>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+builder.Services.AddScoped<IPostagemRepository, PostagemRepository>();
+builder.Services.AddScoped<IPostagemService, PostagemService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
 
@@ -37,6 +39,7 @@ if (app.Environment.IsDevelopment())
 {
     await app.Services.SeedUsuariosAsync();
     await app.Services.SeedTemasAsync();
+    await app.Services.SeedPostagensAsync();
 
     app.UseSwagger();
     app.UseSwaggerUI();

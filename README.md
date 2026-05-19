@@ -8,6 +8,7 @@ O projeto será evoluído em camadas, com persistência de dados, autenticação
 - [Como rodar o projeto](#como-rodar-o-projeto)
 - [Tecnologias utilizadas](#tecnologias-utilizadas)
 - [Banco de dados](#banco-de-dados)
+- [Contratos da API](#contratos-da-api)
 - [Testes](#testes)
 - [Seeders](#seeders)
 - [SonarQube](#sonarqube)
@@ -124,6 +125,12 @@ As validações de entrada também devem ser reforçadas nos DTOs, porque eles r
 
 No CRUD de usuários, os DTOs foram separados conforme o formato necessário em cada chamada. Criamos DTOs de entrada para cadastro, atualização e login, e reutilizamos `UsuarioResponse` nas chamadas que retornam os mesmos dados públicos do usuário. Uma resposta separada só foi criada quando a saída muda da entrada, como em `UsuarioLoginResponse`, que também retorna o token JWT.
 
+## Contratos da API
+
+Os DTOs de resposta devem retornar apenas os campos necessários para o contrato do endpoint. Quando a especificação não pedir um campo, objeto aninhado ou relacionamento completo, a decisão do projeto é não incluir esse dado automaticamente.
+
+No CRUD de postagens, o documento especifica que a postagem deve estar vinculada a um usuário e a um tema, mas não especifica que a resposta deve retornar os objetos completos de usuário e tema. Por isso, `PostagemResponse` retorna apenas `UsuarioId` e `TemaId`. Essa decisão foi tomada para evitar desperdício de código, processamento e envio desnecessário de dados.
+
 ## Autenticação JWT
 
 O token JWT do usuário guarda apenas dados úteis para identificação e autorização. Usamos o `Id` como identificador principal do usuário autenticado, o `Email` e o `Nome` como informações de contexto, e o `Tipo` como perfil de acesso para permitir regras futuras como rotas restritas a administradores.
@@ -136,7 +143,7 @@ Uma melhoria planejada é criar um middleware global de exceções para padroniz
 
 ## Testes
 
-Os testes unitários ficam em `tests/BlogSharp.Api.Tests` e cobrem as regras principais do `UsuarioService` e do `TemaService`, usando fakes simples para repositories e token.
+Os testes unitários ficam em `tests/BlogSharp.Api.Tests` e cobrem as regras principais do `UsuarioService`, `TemaService` e `PostagemService`, usando fakes simples para repositories e token.
 
 Para executar:
 
@@ -158,6 +165,7 @@ Seeders fixos executam
 Migrations pendentes são aplicadas
 Usuários fixos são criados se os emails ainda não existirem
 Tema fixo é criado se ainda não existir
+Postagem fixa é criada se ainda não existir
 ```
 
 Usuários disponíveis para testes:
@@ -173,16 +181,25 @@ Tema inicial disponível para testes:
 Tecnologia
 ```
 
-O segundo modo é o seeder dinâmico manual. Ele deve ser executado pela linha de comando quando for necessário criar uma massa maior de usuários ou temas para simular uso real:
+Postagem inicial disponível para testes:
+
+```text
+Primeira postagem BlogSharp
+```
+
+O segundo modo é o seeder dinâmico manual. Ele deve ser executado pela linha de comando quando for necessário criar uma massa maior de usuários, temas ou postagens para simular uso real:
 
 ```bash
 docker compose exec api dotnet run -- seed usuarios 10
 docker compose exec api dotnet run -- seed temas 5
+docker compose exec api dotnet run -- seed postagens 20
 ```
 
 O número final define quantos usuários serão criados. Os usuários aleatórios usam emails únicos no domínio `seed.blogsharp.local`, tipo `Usuario` ou `Admin`, foto como URL e senha padrão `Senha@123`.
 
 No caso de temas, o número final define quantos temas serão criados. As descrições são geradas com base em nomes simples, como `Tecnologia`, `Programacao`, `Backend` e `Dotnet`, com um sufixo único para evitar duplicação.
+
+No caso de postagens, o número final define quantas postagens serão criadas. As postagens são vinculadas a usuários e temas já cadastrados. Se os dados fixos ainda não existirem, o seeder manual de postagens cria antes os usuários e o tema inicial.
 
 ## Operações Assíncronas
 

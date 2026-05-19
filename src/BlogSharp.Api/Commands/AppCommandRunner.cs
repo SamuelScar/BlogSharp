@@ -41,6 +41,14 @@ public static class AppCommandRunner
             return;
         }
 
+        if (args[1].Equals("postagens", StringComparison.OrdinalIgnoreCase))
+        {
+            var registrosCriados = await services.SeedPostagensAleatoriasAsync(quantidade);
+
+            Console.WriteLine($"{registrosCriados} postagens geradas com sucesso.");
+            return;
+        }
+
         ExibirUsoSeed();
     }
 
@@ -49,5 +57,6 @@ public static class AppCommandRunner
         Console.WriteLine("Uso:");
         Console.WriteLine("  dotnet run -- seed usuarios <quantidade>");
         Console.WriteLine("  dotnet run -- seed temas <quantidade>");
+        Console.WriteLine("  dotnet run -- seed postagens <quantidade>");
     }
 }

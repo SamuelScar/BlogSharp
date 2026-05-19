@@ -13,4 +13,8 @@ public interface IPostagemRepository
     Task<Postagem?> AtualizarAsync(long id, Postagem postagem);
 
     Task<bool> ExcluirAsync(long id);
+
+    Task<bool> UsuarioExisteAsync(long usuarioId);
+
+    Task<bool> TemaExisteAsync(long temaId);
 }
