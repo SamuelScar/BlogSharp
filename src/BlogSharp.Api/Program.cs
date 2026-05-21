@@ -65,3 +65,8 @@ app.MapGet("/health", () => Results.Ok(new
 app.MapControllers();
 
 await app.RunAsync();
+
+// Necessario para os testes de integracao com WebApplicationFactory.
+public partial class Program
+{
+}
