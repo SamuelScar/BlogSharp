@@ -67,12 +67,19 @@ public class UsuariosController(IUsuarioService usuarioService) : ControllerBase
         long id,
         UsuarioPrivilegioAtualizacao usuarioPrivilegioAtualizacao)
     {
-        if (UsuarioEhDono(id))
+        UsuarioResponse? usuario;
+
+        try
+        {
+            usuario = await usuarioService.AtualizarPrivilegioAsync(
+                this.ObterUsuarioId().GetValueOrDefault(),
+                id,
+                usuarioPrivilegioAtualizacao);
+        }
+        catch (AcessoNegadoException)
         {
             return Forbid();
         }
-
-        var usuario = await usuarioService.AtualizarPrivilegioAsync(id, usuarioPrivilegioAtualizacao);
 
         if (usuario is null)
         {

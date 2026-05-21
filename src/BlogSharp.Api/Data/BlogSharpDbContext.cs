@@ -5,9 +5,9 @@ namespace BlogSharp.Api.Data;
 
 public class BlogSharpDbContext(DbContextOptions<BlogSharpDbContext> options) : DbContext(options)
 {
-    public DbSet<Usuario> Usuarios { get; set; }
-    public DbSet<Tema> Temas { get; set; }
-    public DbSet<Postagem> Postagens { get; set; }
+    public DbSet<Usuario> Usuarios => Set<Usuario>();
+    public DbSet<Tema> Temas => Set<Tema>();
+    public DbSet<Postagem> Postagens => Set<Postagem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

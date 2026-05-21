@@ -8,7 +8,7 @@ public interface IUsuarioRepository
 
     Task<Usuario> CadastrarAsync(Usuario usuario);
 
-    Task<Usuario?> AtualizarAsync(long id, Usuario usuario, bool atualizarSenha);
+    Task<Usuario?> AtualizarAsync(long id, Usuario usuarioAtualizado, bool atualizarSenha);
 
     Task<Usuario?> AtualizarTipoAsync(long id, string tipo);
 

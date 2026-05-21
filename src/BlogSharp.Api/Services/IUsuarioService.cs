@@ -8,7 +8,10 @@ public interface IUsuarioService
 
     Task<UsuarioResponse?> AtualizarAsync(long id, UsuarioAtualizacao usuarioAtualizacao);
 
-    Task<UsuarioResponse?> AtualizarPrivilegioAsync(long id, UsuarioPrivilegioAtualizacao usuarioPrivilegioAtualizacao);
+    Task<UsuarioResponse?> AtualizarPrivilegioAsync(
+        long usuarioAutenticadoId,
+        long id,
+        UsuarioPrivilegioAtualizacao usuarioPrivilegioAtualizacao);
 
     Task<bool> ExcluirAsync(long id);
 

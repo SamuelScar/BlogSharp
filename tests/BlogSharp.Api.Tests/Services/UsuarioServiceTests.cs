@@ -165,7 +165,7 @@ public class UsuarioServiceTests
             Tipo = "Admin"
         };
 
-        var response = await service.AtualizarPrivilegioAsync(usuario.Id, usuarioPrivilegioAtualizacao);
+        var response = await service.AtualizarPrivilegioAsync(99, usuario.Id, usuarioPrivilegioAtualizacao);
 
         Assert.NotNull(response);
         Assert.Equal("Admin", response!.Tipo);
@@ -182,9 +182,32 @@ public class UsuarioServiceTests
             Tipo = "Admin"
         };
 
-        var response = await service.AtualizarPrivilegioAsync(99, usuarioPrivilegioAtualizacao);
+        var response = await service.AtualizarPrivilegioAsync(1, 99, usuarioPrivilegioAtualizacao);
 
         Assert.Null(response);
+    }
+
+    [Fact]
+    public async Task AtualizarPrivilegioAsync_DeveRecusarAlteracaoDoProprioPrivilegio()
+    {
+        var repository = new FakeUsuarioRepository();
+        var usuario = repository.AdicionarUsuario(new Usuario
+        {
+            Nome = "Admin",
+            Email = "admin@email.com",
+            SenhaHash = "hash",
+            Tipo = "Admin"
+        });
+        var service = CriarService(repository);
+        var usuarioPrivilegioAtualizacao = new UsuarioPrivilegioAtualizacao
+        {
+            Tipo = "Usuario"
+        };
+
+        var exception = await Assert.ThrowsAsync<AcessoNegadoException>(
+            () => service.AtualizarPrivilegioAsync(usuario.Id, usuario.Id, usuarioPrivilegioAtualizacao));
+
+        Assert.Equal("Administrador nao pode alterar o proprio privilegio.", exception.Message);
     }
 
     [Fact]
@@ -198,7 +221,7 @@ public class UsuarioServiceTests
         };
 
         var exception = await Assert.ThrowsAsync<RequisicaoInvalidaException>(
-            () => service.AtualizarPrivilegioAsync(1, usuarioPrivilegioAtualizacao));
+            () => service.AtualizarPrivilegioAsync(1, 2, usuarioPrivilegioAtualizacao));
 
         Assert.Equal("Tipo de usuario invalido. Use Usuario ou Admin.", exception.Message);
     }

@@ -36,6 +36,7 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
         return exception switch
         {
             RequisicaoInvalidaException ex => (StatusCodes.Status400BadRequest, ex.Message),
+            AcessoNegadoException ex => (StatusCodes.Status403Forbidden, ex.Message),
             RecursoNaoEncontradoException ex => (StatusCodes.Status404NotFound, ex.Message),
             ConflitoException ex => (StatusCodes.Status409Conflict, ex.Message),
             _ => (StatusCodes.Status500InternalServerError, "Erro interno no servidor.")

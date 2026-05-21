@@ -75,9 +75,15 @@ public class UsuarioService(
     }
 
     public async Task<UsuarioResponse?> AtualizarPrivilegioAsync(
+        long usuarioAutenticadoId,
         long id,
         UsuarioPrivilegioAtualizacao usuarioPrivilegioAtualizacao)
     {
+        if (usuarioAutenticadoId == id)
+        {
+            throw new AcessoNegadoException("Administrador nao pode alterar o proprio privilegio.");
+        }
+
         var tipo = ValidarTipo(usuarioPrivilegioAtualizacao.Tipo);
         var usuario = await usuarioRepository.AtualizarTipoAsync(id, tipo);
 
