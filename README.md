@@ -9,6 +9,7 @@ O projeto será evoluído em camadas, com persistência de dados, autenticação
 - [Tecnologias utilizadas](#tecnologias-utilizadas)
 - [Banco de dados](#banco-de-dados)
 - [Contratos da API](#contratos-da-api)
+- [Integração com IA](#integração-com-ia)
 - [Testes](#testes)
 - [Seeders](#seeders)
 - [SonarQube](#sonarqube)
@@ -31,13 +32,18 @@ Crie o arquivo `.env` na raiz do projeto usando `.env.example` como base:
 cp .env.example .env
 ```
 
-Para desenvolvimento local, mantenha os dados do banco alinhados com o `docker-compose.yml` e defina uma chave JWT com pelo menos 32 caracteres:
+Para desenvolvimento local, mantenha os dados do banco alinhados com o `docker-compose.yml`, defina uma chave JWT com pelo menos 32 caracteres e mantenha a integração com IA desabilitada até a escolha do provedor:
 
 ```env
 POSTGRES_DB=blogsharp
 POSTGRES_USER=blogsharp
 POSTGRES_PASSWORD=blogsharp_password
 JWT_SECRET_KEY=troque_por_uma_chave_segura_com_pelo_menos_32_caracteres
+IA_ENABLED=false
+IA_PROVIDER=
+IA_BASE_URL=
+IA_API_KEY=
+IA_MODEL=
 HOST_UID=1000
 HOST_GID=1000
 ```
@@ -147,6 +153,18 @@ No CRUD de postagens, o documento especifica que a postagem deve estar vinculada
 
 O projeto gera documentação XML para que o Swagger exiba os comentários escritos com `/// <summary>`. O warning `CS1591` foi desativado no `.csproj` porque nem toda classe, método ou propriedade pública precisa de comentário XML; a documentação deve ser usada apenas onde melhora o contrato da API.
 
+## Integração com IA
+
+Ao cadastrar uma postagem, a API está preparada para enviar o conteúdo para um provedor externo de IA e salvar na postagem o resumo, a categoria e as tags retornadas.
+
+O provedor ainda não está definido. A integração fica controlada pelas variáveis genéricas `IA_ENABLED`, `IA_PROVIDER`, `IA_BASE_URL`, `IA_API_KEY` e `IA_MODEL`. No Docker Compose, esses valores são enviados para a aplicação como `IA__Enabled`, `IA__Provider`, `IA__BaseUrl`, `IA__ApiKey` e `IA__Model`.
+
+Enquanto `IA_ENABLED=false`, o cadastro de postagens continua funcionando e os campos `ResumoIA`, `TagsIA` e `CategoriaIA` ficam vazios. Quando o provedor for escolhido, a implementação específica deve ser conectada à interface `IIAProvider`.
+
+Também existe a rota protegida `POST /api/ia/resumir`, usada para gerar resumo, categoria e tags a partir de um texto sem criar uma postagem.
+
+Se a integração estiver desabilitada ou sem provedor configurado, essa rota retorna erro de integração com IA em vez de chamar uma API externa.
+
 ## Autenticação JWT
 
 O token JWT do usuário guarda apenas dados úteis para identificação e autorização. Usamos o `Id` como identificador principal do usuário autenticado, o `Email` e o `Nome` como informações de contexto, e o `Tipo` como perfil de acesso para permitir regras futuras como rotas restritas a administradores.
@@ -155,7 +173,7 @@ Dados sensíveis, como senha ou hash da senha, não devem entrar no token. O obj
 
 ## Regras de Acesso
 
-As rotas de cadastro, login, listagem de temas e listagem/filtro de postagens são públicas. As rotas que alteram cadastros existentes, postagens ou temas exigem autenticação.
+As rotas de cadastro, login, listagem de temas e listagem/filtro de postagens são públicas. As rotas que alteram cadastros existentes, postagens, temas ou que consomem IA exigem autenticação.
 
 Usuários podem atualizar e excluir o próprio cadastro. Administradores podem excluir qualquer usuário, mas não podem alterar dados pessoais de outros usuários.
 
@@ -192,12 +210,22 @@ Erros inesperados também são capturados pelo `ExceptionMiddleware` e retornam:
 
 ## Testes
 
-Os testes unitários ficam em `tests/BlogSharp.Api.Tests` e cobrem as regras principais do `UsuarioService`, `TemaService` e `PostagemService`, usando fakes simples para repositories e token.
+Os testes ficam em `tests/BlogSharp.Api.Tests`.
 
-Para executar:
+Os testes unitários cobrem as regras principais do `UsuarioService`, `TemaService` e `PostagemService`, usando fakes simples para repositories e token.
+
+Os testes de integração sobem a API em memória e validam fluxos HTTP principais, como cadastro, login, autorização JWT, criação de temas por administrador e criação/filtro de postagens.
+
+Para executar todos os testes, unitários e de integração:
 
 ```bash
 dotnet test BlogSharp.sln
+```
+
+Para executar apenas os testes de integração:
+
+```bash
+dotnet test BlogSharp.sln --filter FullyQualifiedName~Integration
 ```
 
 ## Seeders
@@ -269,6 +297,12 @@ O projeto possui um serviço Docker para rodar o SonarQube localmente e analisar
 
 Como o SonarQube não é necessário para executar a API no dia a dia, ele fica no profile `quality` do Docker Compose.
 
+O profile `quality` é apenas uma separação operacional do Docker Compose. Ele não representa uma obrigação de cumprir o Quality Gate padrão do SonarQube.
+
+O PDF do desafio pede configuração do SonarQube, integração com o build, uso das métricas e geração de relatórios. Ele não define meta mínima de cobertura, não exige o Quality Gate `Sonar Way` e não pede aprovação obrigatória em 80% de cobertura.
+
+Por isso, neste projeto o SonarQube será usado como ferramenta de inspeção. O foco é corrigir problemas reais apontados pela análise, como bugs, vulnerabilidades, hotspots relevantes e más práticas. A cobertura continuará disponível como métrica auxiliar, mas não será usada para criar testes artificiais apenas para atingir porcentagem.
+
 ### 1. Subir o SonarQube
 
 Na raiz do projeto, execute:
@@ -313,7 +347,17 @@ export PATH="$PATH:$HOME/.dotnet/tools"
 
 ### 4. Executar a análise
 
-O projeto usa o fluxo oficial do `dotnet-sonarscanner` para aplicações .NET: `begin`, `build` e `end`. As configurações da análise ficam no script `scripts/sonar.sh`, em vez de `sonar-project.properties`, porque o scanner .NET não usa esse arquivo.
+O projeto usa o fluxo oficial do `dotnet-sonarscanner` para aplicações .NET: `begin`, `build`, testes com cobertura e `end`. As configurações da análise ficam no script `scripts/sonar.sh`, em vez de `sonar-project.properties`, porque o scanner .NET não usa esse arquivo.
+
+Durante a análise, o script executa os testes com Coverlet e gera um relatório OpenCover em `.sonarqube/coverage/coverage.opencover.xml`. Esse relatório é enviado ao SonarQube para preencher a métrica de cobertura.
+
+Para consultar a cobertura por pasta e arquivo sem depender da navegação manual no SonarQube:
+
+```bash
+./scripts/coverage-report.sh
+```
+
+O relatório local será gerado em `.sonarqube/coverage/coverage-report.md`.
 
 Para rodar:
 

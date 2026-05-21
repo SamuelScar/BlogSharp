@@ -3,6 +3,7 @@ using System;
 using BlogSharp.Api.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BlogSharp.Api.Migrations
 {
     [DbContext(typeof(BlogSharpDbContext))]
-    partial class BlogSharpDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260521160000_adiciona_campos_ia_postagem")]
+    partial class AdicionaCamposIAPostagem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

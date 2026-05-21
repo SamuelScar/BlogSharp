@@ -18,6 +18,15 @@ public class Postagem
 
     public DateTime? DataAtualizacao { get; set; }
 
+    [StringLength(500)]
+    public string? ResumoIA { get; set; }
+
+    [StringLength(500)]
+    public string? TagsIA { get; set; }
+
+    [StringLength(100)]
+    public string? CategoriaIA { get; set; }
+
     public long UsuarioId { get; set; }
 
     public Usuario Usuario { get; set; } = null!;

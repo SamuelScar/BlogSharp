@@ -19,6 +19,11 @@ services:
       DOTNET_CLI_HOME: /tmp
       ConnectionStrings__DefaultConnection: Host=database;Port=5432;Database=${POSTGRES_DB:-blogsharp};Username=${POSTGRES_USER:-blogsharp};Password=${POSTGRES_PASSWORD:-blogsharp_password}
       Jwt__SecretKey: ${JWT_SECRET_KEY:?JWT_SECRET_KEY nao definida no .env}
+      IA__Enabled: ${IA_ENABLED:-false}
+      IA__Provider: ${IA_PROVIDER:-}
+      IA__BaseUrl: ${IA_BASE_URL:-}
+      IA__ApiKey: ${IA_API_KEY:-}
+      IA__Model: ${IA_MODEL:-}
 
   database:
     image: postgres:16-alpine

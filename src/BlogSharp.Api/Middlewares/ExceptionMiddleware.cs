@@ -20,7 +20,11 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
 
             var (statusCode, mensagem) = MapearErro(exception);
 
-            if (statusCode == StatusCodes.Status500InternalServerError)
+            if (exception is IntegracaoIAException)
+            {
+                logger.LogWarning(exception, "Falha ao processar integracao com IA.");
+            }
+            else if (statusCode == StatusCodes.Status500InternalServerError)
             {
                 logger.LogError(exception, "Erro inesperado ao processar a requisicao.");
             }
@@ -39,6 +43,7 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
             AcessoNegadoException ex => (StatusCodes.Status403Forbidden, ex.Message),
             RecursoNaoEncontradoException ex => (StatusCodes.Status404NotFound, ex.Message),
             ConflitoException ex => (StatusCodes.Status409Conflict, ex.Message),
+            IntegracaoIAException ex => (StatusCodes.Status502BadGateway, ex.Message),
             _ => (StatusCodes.Status500InternalServerError, "Erro interno no servidor.")
         };
     }

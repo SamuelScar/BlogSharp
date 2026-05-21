@@ -6,6 +6,7 @@ using BlogSharp.Api.Middlewares;
 using BlogSharp.Api.Models;
 using BlogSharp.Api.Repositories;
 using BlogSharp.Api.Services;
+using BlogSharp.Api.Services.IA;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +23,9 @@ builder.Services.AddScoped<IPostagemRepository, PostagemRepository>();
 builder.Services.AddScoped<IPostagemService, PostagemService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
+builder.Services.Configure<IAOptions>(builder.Configuration.GetSection("IA"));
+builder.Services.AddScoped<IIAProvider, IAProviderNaoConfigurado>();
+builder.Services.AddScoped<IIAService, IAService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

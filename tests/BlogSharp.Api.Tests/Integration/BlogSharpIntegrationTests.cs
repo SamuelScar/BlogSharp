@@ -128,6 +128,33 @@ public class BlogSharpIntegrationTests
         Assert.Equal(cadastro.Titulo, postagem.Titulo);
         Assert.Equal(usuario.Id, postagem.UsuarioId);
         Assert.Equal(tema.Id, postagem.TemaId);
+        Assert.Equal("Resumo gerado pela IA.", postagem.ResumoIA);
+        Assert.Equal("Teste, Integracao, IA", postagem.TagsIA);
+        Assert.Equal("Tecnologia", postagem.CategoriaIA);
+    }
+
+    [Fact]
+    public async Task IA_DeveResumirConteudoQuandoUsuarioEstaAutenticado()
+    {
+        using var factory = new BlogSharpApiFactory();
+        var client = factory.CreateClient();
+        var usuario = await factory.AdicionarUsuarioAsync(
+            nome: "Usuario IA",
+            email: "usuario.ia@email.com",
+            senha: "Senha@123");
+
+        Autorizar(client, await LoginAsync(client, usuario.Email, "Senha@123"));
+        var response = await client.PostAsJsonAsync("/api/ia/resumir", new ResumoIARequest
+        {
+            Conteudo = "Conteudo para resumo inteligente de postagem."
+        });
+        var resultado = await response.Content.ReadFromJsonAsync<ResultadoIA>();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(resultado);
+        Assert.Equal("Resumo gerado pela IA.", resultado!.Resumo);
+        Assert.Equal("Teste, Integracao, IA", resultado.Tags);
+        Assert.Equal("Tecnologia", resultado.Categoria);
     }
 
     [Fact]
@@ -173,10 +200,12 @@ public class BlogSharpIntegrationTests
             senha: "Senha@123");
 
         Autorizar(client, await LoginAsync(client, admin.Email, "Admin@123"));
-        var response = await client.PatchAsJsonAsync($"/api/usuarios/{usuario.Id}/privilegio", new UsuarioPrivilegioAtualizacao
-        {
-            Tipo = "Admin"
-        });
+        var response = await client.PatchAsJsonAsync(
+            $"/api/usuarios/{usuario.Id}/privilegio",
+            new UsuarioPrivilegioAtualizacao
+            {
+                Tipo = "Admin"
+            });
         var usuarioAtualizado = await response.Content.ReadFromJsonAsync<UsuarioResponse>();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -197,10 +226,12 @@ public class BlogSharpIntegrationTests
             tipo: "Admin");
 
         Autorizar(client, await LoginAsync(client, admin.Email, "Admin@123"));
-        var response = await client.PatchAsJsonAsync($"/api/usuarios/{admin.Id}/privilegio", new UsuarioPrivilegioAtualizacao
-        {
-            Tipo = "Usuario"
-        });
+        var response = await client.PatchAsJsonAsync(
+            $"/api/usuarios/{admin.Id}/privilegio",
+            new UsuarioPrivilegioAtualizacao
+            {
+                Tipo = "Usuario"
+            });
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }

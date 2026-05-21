@@ -2,10 +2,15 @@ using BlogSharp.Api.DTOs;
 using BlogSharp.Api.Exceptions;
 using BlogSharp.Api.Models;
 using BlogSharp.Api.Repositories;
+using BlogSharp.Api.Services.IA;
+using Microsoft.Extensions.Options;
 
 namespace BlogSharp.Api.Services;
 
-public class PostagemService(IPostagemRepository postagemRepository) : IPostagemService
+public class PostagemService(
+    IPostagemRepository postagemRepository,
+    IIAService iaService,
+    IOptions<IAOptions> iaOptions) : IPostagemService
 {
     public async Task<IReadOnlyList<PostagemResponse>> ListarTodasAsync()
     {
@@ -24,11 +29,15 @@ public class PostagemService(IPostagemRepository postagemRepository) : IPostagem
     public async Task<PostagemResponse> CadastrarAsync(PostagemCadastro postagemCadastro)
     {
         await ValidarRelacionamentosAsync(postagemCadastro.UsuarioId, postagemCadastro.TemaId);
+        var resultadoIA = await GerarResumoIAAsync(postagemCadastro.Conteudo);
 
         var postagem = new Postagem
         {
             Titulo = postagemCadastro.Titulo,
             Conteudo = postagemCadastro.Conteudo,
+            ResumoIA = resultadoIA?.Resumo,
+            TagsIA = resultadoIA?.Tags,
+            CategoriaIA = resultadoIA?.Categoria,
             UsuarioId = postagemCadastro.UsuarioId,
             TemaId = postagemCadastro.TemaId
         };
@@ -36,6 +45,13 @@ public class PostagemService(IPostagemRepository postagemRepository) : IPostagem
         var postagemCadastrada = await postagemRepository.CadastrarAsync(postagem);
 
         return MapearResponse(postagemCadastrada);
+    }
+
+    private async Task<ResultadoIA?> GerarResumoIAAsync(string conteudo)
+    {
+        return iaOptions.Value.Enabled
+            ? await iaService.GerarResumoAsync(conteudo)
+            : null;
     }
 
     public async Task<PostagemResponse?> AtualizarAsync(long id, PostagemAtualizacao postagemAtualizacao)
@@ -87,6 +103,9 @@ public class PostagemService(IPostagemRepository postagemRepository) : IPostagem
             Conteudo = postagem.Conteudo,
             DataCriacao = postagem.DataCriacao,
             DataAtualizacao = postagem.DataAtualizacao,
+            ResumoIA = postagem.ResumoIA,
+            TagsIA = postagem.TagsIA,
+            CategoriaIA = postagem.CategoriaIA,
             UsuarioId = postagem.UsuarioId,
             TemaId = postagem.TemaId
         };

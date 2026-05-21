@@ -1,5 +1,7 @@
 using BlogSharp.Api.Data;
+using BlogSharp.Api.DTOs;
 using BlogSharp.Api.Models;
+using BlogSharp.Api.Services.IA;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -32,7 +34,8 @@ public class BlogSharpApiFactory : WebApplicationFactory<Program>
                 ["Jwt:SecretKey"] = JwtSecretKey,
                 ["Jwt:Issuer"] = JwtIssuer,
                 ["Jwt:Audience"] = JwtAudience,
-                ["Jwt:ExpirationMinutes"] = "60"
+                ["Jwt:ExpirationMinutes"] = "60",
+                ["IA:Enabled"] = "true"
             });
         });
 
@@ -40,6 +43,8 @@ public class BlogSharpApiFactory : WebApplicationFactory<Program>
         {
             services.RemoveAll<DbContextOptions<BlogSharpDbContext>>();
             services.AddDbContext<BlogSharpDbContext>(options => options.UseInMemoryDatabase(databaseName));
+            services.RemoveAll<IIAService>();
+            services.AddSingleton<IIAService, FakeIAService>();
 
             services
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -93,5 +98,18 @@ public class BlogSharpApiFactory : WebApplicationFactory<Program>
         await context.SaveChangesAsync();
 
         return tema;
+    }
+
+    private sealed class FakeIAService : IIAService
+    {
+        public Task<ResultadoIA> GerarResumoAsync(string conteudo)
+        {
+            return Task.FromResult(new ResultadoIA
+            {
+                Resumo = "Resumo gerado pela IA.",
+                Tags = "Teste, Integracao, IA",
+                Categoria = "Tecnologia"
+            });
+        }
     }
 }

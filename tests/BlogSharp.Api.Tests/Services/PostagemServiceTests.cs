@@ -3,6 +3,8 @@ using BlogSharp.Api.Exceptions;
 using BlogSharp.Api.Models;
 using BlogSharp.Api.Repositories;
 using BlogSharp.Api.Services;
+using BlogSharp.Api.Services.IA;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace BlogSharp.Api.Tests.Services;
@@ -27,7 +29,7 @@ public class PostagemServiceTests
             UsuarioId = 2,
             TemaId = 1
         });
-        var service = new PostagemService(repository);
+        var service = CriarService(repository);
 
         var postagens = await service.ListarTodasAsync();
 
@@ -40,7 +42,7 @@ public class PostagemServiceTests
     public async Task FiltrarAsync_DeveFiltrarPorAutor()
     {
         var repository = CriarRepositoryComPostagens();
-        var service = new PostagemService(repository);
+        var service = CriarService(repository);
 
         var postagens = await service.FiltrarAsync(new PostagemFiltro { Autor = 1 });
 
@@ -52,7 +54,7 @@ public class PostagemServiceTests
     public async Task FiltrarAsync_DeveFiltrarPorTema()
     {
         var repository = CriarRepositoryComPostagens();
-        var service = new PostagemService(repository);
+        var service = CriarService(repository);
 
         var postagens = await service.FiltrarAsync(new PostagemFiltro { Tema = 1 });
 
@@ -64,7 +66,7 @@ public class PostagemServiceTests
     public async Task FiltrarAsync_DeveFiltrarPorAutorETema()
     {
         var repository = CriarRepositoryComPostagens();
-        var service = new PostagemService(repository);
+        var service = CriarService(repository);
 
         var postagens = await service.FiltrarAsync(new PostagemFiltro { Autor = 1, Tema = 2 });
 
@@ -79,7 +81,7 @@ public class PostagemServiceTests
         var repository = new FakePostagemRepository();
         repository.AdicionarUsuario(1);
         repository.AdicionarTema(1);
-        var service = new PostagemService(repository);
+        var service = CriarService(repository);
         var postagemCadastro = new PostagemCadastro
         {
             Titulo = "Postagem de teste",
@@ -95,6 +97,9 @@ public class PostagemServiceTests
         Assert.Equal(postagemCadastro.Conteudo, response.Conteudo);
         Assert.Equal(postagemCadastro.UsuarioId, response.UsuarioId);
         Assert.Equal(postagemCadastro.TemaId, response.TemaId);
+        Assert.Equal("Resumo gerado pela IA.", response.ResumoIA);
+        Assert.Equal("Teste, Integracao, IA", response.TagsIA);
+        Assert.Equal("Tecnologia", response.CategoriaIA);
         Assert.NotEqual(default, response.DataCriacao);
     }
 
@@ -103,7 +108,7 @@ public class PostagemServiceTests
     {
         var repository = new FakePostagemRepository();
         repository.AdicionarTema(1);
-        var service = new PostagemService(repository);
+        var service = CriarService(repository);
         var postagemCadastro = new PostagemCadastro
         {
             Titulo = "Postagem de teste",
@@ -124,7 +129,7 @@ public class PostagemServiceTests
     {
         var repository = new FakePostagemRepository();
         repository.AdicionarUsuario(1);
-        var service = new PostagemService(repository);
+        var service = CriarService(repository);
         var postagemCadastro = new PostagemCadastro
         {
             Titulo = "Postagem de teste",
@@ -155,7 +160,7 @@ public class PostagemServiceTests
             UsuarioId = 1,
             TemaId = 1
         });
-        var service = new PostagemService(repository);
+        var service = CriarService(repository);
         var postagemAtualizacao = new PostagemAtualizacao
         {
             Titulo = "Titulo novo",
@@ -181,7 +186,7 @@ public class PostagemServiceTests
         var repository = new FakePostagemRepository();
         repository.AdicionarUsuario(1);
         repository.AdicionarTema(1);
-        var service = new PostagemService(repository);
+        var service = CriarService(repository);
         var postagemAtualizacao = new PostagemAtualizacao
         {
             Titulo = "Titulo novo",
@@ -206,7 +211,7 @@ public class PostagemServiceTests
             UsuarioId = 1,
             TemaId = 1
         });
-        var service = new PostagemService(repository);
+        var service = CriarService(repository);
 
         var excluido = await service.ExcluirAsync(postagem.Id);
 
@@ -218,7 +223,7 @@ public class PostagemServiceTests
     public async Task ExcluirAsync_DeveRetornarFalseQuandoPostagemNaoExiste()
     {
         var repository = new FakePostagemRepository();
-        var service = new PostagemService(repository);
+        var service = CriarService(repository);
 
         var excluido = await service.ExcluirAsync(99);
 
@@ -251,6 +256,26 @@ public class PostagemServiceTests
         });
 
         return repository;
+    }
+
+    private static PostagemService CriarService(FakePostagemRepository repository)
+    {
+        var iaOptions = Options.Create(new IAOptions { Enabled = true });
+
+        return new PostagemService(repository, new FakeIAService(), iaOptions);
+    }
+
+    private sealed class FakeIAService : IIAService
+    {
+        public Task<ResultadoIA> GerarResumoAsync(string conteudo)
+        {
+            return Task.FromResult(new ResultadoIA
+            {
+                Resumo = "Resumo gerado pela IA.",
+                Tags = "Teste, Integracao, IA",
+                Categoria = "Tecnologia"
+            });
+        }
     }
 
     private sealed class FakePostagemRepository : IPostagemRepository

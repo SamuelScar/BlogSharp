@@ -12,6 +12,12 @@ public class PostagemResponse
 
     public DateTime? DataAtualizacao { get; set; }
 
+    public string? ResumoIA { get; set; }
+
+    public string? TagsIA { get; set; }
+
+    public string? CategoriaIA { get; set; }
+
     public long UsuarioId { get; set; }
 
     public long TemaId { get; set; }
