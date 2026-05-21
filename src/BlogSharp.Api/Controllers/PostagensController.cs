@@ -13,7 +13,11 @@ public class PostagensController(IPostagemService postagemService) : ControllerB
 {
     private const string PostagemNaoEncontrada = "Postagem nao encontrada.";
 
+    /// <summary>
+    /// Lista todas as postagens cadastradas.
+    /// </summary>
     [HttpGet]
+    [ProducesResponseType(typeof(IReadOnlyList<PostagemResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<PostagemResponse>>> ListarTodas()
     {
         var postagens = await postagemService.ListarTodasAsync();
@@ -21,7 +25,11 @@ public class PostagensController(IPostagemService postagemService) : ControllerB
         return Ok(postagens);
     }
 
+    /// <summary>
+    /// Filtra postagens por autor, tema ou pelos dois criterios.
+    /// </summary>
     [HttpGet("filtro")]
+    [ProducesResponseType(typeof(IReadOnlyList<PostagemResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<PostagemResponse>>> Filtrar([FromQuery] PostagemFiltro filtro)
     {
         var postagens = await postagemService.FiltrarAsync(filtro);
@@ -29,8 +37,16 @@ public class PostagensController(IPostagemService postagemService) : ControllerB
         return Ok(postagens);
     }
 
+    /// <summary>
+    /// Cria uma postagem vinculada ao usuario autenticado e a um tema existente.
+    /// </summary>
     [Authorize]
     [HttpPost]
+    [ProducesResponseType(typeof(PostagemResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PostagemResponse>> Cadastrar(PostagemCadastro postagemCadastro)
     {
         var usuarioId = this.ObterUsuarioId();
@@ -50,8 +66,16 @@ public class PostagensController(IPostagemService postagemService) : ControllerB
         return StatusCode(StatusCodes.Status201Created, postagem);
     }
 
+    /// <summary>
+    /// Atualiza uma postagem existente quando o usuario autenticado e o dono da postagem.
+    /// </summary>
     [Authorize]
     [HttpPut("{id:long}")]
+    [ProducesResponseType(typeof(PostagemResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PostagemResponse>> Atualizar(long id, PostagemAtualizacao postagemAtualizacao)
     {
         var usuarioId = this.ObterUsuarioId();
@@ -83,8 +107,15 @@ public class PostagensController(IPostagemService postagemService) : ControllerB
         return Ok(postagem);
     }
 
+    /// <summary>
+    /// Exclui uma postagem existente quando o usuario autenticado e o dono ou administrador.
+    /// </summary>
     [Authorize]
     [HttpDelete("{id:long}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Excluir(long id)
     {
         var usuarioId = this.ObterUsuarioId();

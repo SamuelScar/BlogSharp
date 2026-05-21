@@ -10,7 +10,11 @@ namespace BlogSharp.Api.Controllers;
 [Route("api/temas")]
 public class TemasController(ITemaService temaService) : ControllerBase
 {
+    /// <summary>
+    /// Lista todos os temas cadastrados.
+    /// </summary>
     [HttpGet]
+    [ProducesResponseType(typeof(IReadOnlyList<TemaResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<TemaResponse>>> ListarTodos()
     {
         var temas = await temaService.ListarTodosAsync();
@@ -18,8 +22,15 @@ public class TemasController(ITemaService temaService) : ControllerBase
         return Ok(temas);
     }
 
+    /// <summary>
+    /// Cadastra um novo tema. Acesso restrito a administradores.
+    /// </summary>
     [Authorize(Roles = "Admin")]
     [HttpPost]
+    [ProducesResponseType(typeof(TemaResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<TemaResponse>> Cadastrar(TemaCadastro temaCadastro)
     {
         var tema = await temaService.CadastrarAsync(temaCadastro);
@@ -27,8 +38,16 @@ public class TemasController(ITemaService temaService) : ControllerBase
         return StatusCode(StatusCodes.Status201Created, tema);
     }
 
+    /// <summary>
+    /// Atualiza um tema existente. Acesso restrito a administradores.
+    /// </summary>
     [Authorize(Roles = "Admin")]
     [HttpPut("{id:long}")]
+    [ProducesResponseType(typeof(TemaResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TemaResponse>> Atualizar(long id, TemaAtualizacao temaAtualizacao)
     {
         var tema = await temaService.AtualizarAsync(id, temaAtualizacao);
@@ -41,8 +60,16 @@ public class TemasController(ITemaService temaService) : ControllerBase
         return Ok(tema);
     }
 
+    /// <summary>
+    /// Exclui um tema existente. Acesso restrito a administradores.
+    /// </summary>
     [Authorize(Roles = "Admin")]
     [HttpDelete("{id:long}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Excluir(long id)
     {
         var excluido = await temaService.ExcluirAsync(id);

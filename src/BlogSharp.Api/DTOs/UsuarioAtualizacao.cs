@@ -13,12 +13,11 @@ public class UsuarioAtualizacao
     [StringLength(255)]
     public string Email { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Nova senha do usuario. Se nao for informada, a senha atual sera mantida.
+    /// </summary>
     [StringLength(100, MinimumLength = 6)]
     public string? Senha { get; set; }
-
-    [Required]
-    [StringLength(30)]
-    public string Tipo { get; set; } = "Usuario";
 
     [StringLength(500)]
     public string? Foto { get; set; }

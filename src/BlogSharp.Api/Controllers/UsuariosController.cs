@@ -11,7 +11,13 @@ namespace BlogSharp.Api.Controllers;
 [Route("api/usuarios")]
 public class UsuariosController(IUsuarioService usuarioService) : ControllerBase
 {
+    /// <summary>
+    /// Cadastra um novo usuario.
+    /// </summary>
     [HttpPost("cadastrar")]
+    [ProducesResponseType(typeof(UsuarioResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<UsuarioResponse>> Cadastrar(UsuarioCadastro usuarioCadastro)
     {
         var usuario = await usuarioService.CadastrarAsync(usuarioCadastro);
@@ -19,8 +25,17 @@ public class UsuariosController(IUsuarioService usuarioService) : ControllerBase
         return StatusCode(StatusCodes.Status201Created, usuario);
     }
 
+    /// <summary>
+    /// Atualiza os dados do proprio usuario autenticado.
+    /// </summary>
     [Authorize]
     [HttpPut("{id:long}")]
+    [ProducesResponseType(typeof(UsuarioResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<UsuarioResponse>> Atualizar(long id, UsuarioAtualizacao usuarioAtualizacao)
     {
         if (!UsuarioEhDono(id))
@@ -38,8 +53,45 @@ public class UsuariosController(IUsuarioService usuarioService) : ControllerBase
         return Ok(usuario);
     }
 
+    /// <summary>
+    /// Atualiza o perfil de acesso de outro usuario. Acesso restrito a administradores.
+    /// </summary>
+    [Authorize(Roles = "Admin")]
+    [HttpPatch("{id:long}/privilegio")]
+    [ProducesResponseType(typeof(UsuarioResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UsuarioResponse>> AtualizarPrivilegio(
+        long id,
+        UsuarioPrivilegioAtualizacao usuarioPrivilegioAtualizacao)
+    {
+        if (UsuarioEhDono(id))
+        {
+            return Forbid();
+        }
+
+        var usuario = await usuarioService.AtualizarPrivilegioAsync(id, usuarioPrivilegioAtualizacao);
+
+        if (usuario is null)
+        {
+            throw new RecursoNaoEncontradoException("Usuario nao encontrado.");
+        }
+
+        return Ok(usuario);
+    }
+
+    /// <summary>
+    /// Exclui o proprio usuario autenticado ou qualquer usuario quando o perfil for administrador.
+    /// </summary>
     [Authorize]
     [HttpDelete("{id:long}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Excluir(long id)
     {
         if (!PodeExcluirUsuario(id))
@@ -57,7 +109,13 @@ public class UsuariosController(IUsuarioService usuarioService) : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Autentica o usuario com email e senha e retorna um token JWT.
+    /// </summary>
     [HttpPost("login")]
+    [ProducesResponseType(typeof(UsuarioLoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<UsuarioLoginResponse>> Login(UsuarioLogin usuarioLogin)
     {
         var usuarioAutenticado = await usuarioService.AutenticarAsync(usuarioLogin);

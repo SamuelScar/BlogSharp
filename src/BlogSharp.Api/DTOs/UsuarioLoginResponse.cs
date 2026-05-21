@@ -12,5 +12,8 @@ public class UsuarioLoginResponse
 
     public string? Foto { get; set; }
 
+    /// <summary>
+    /// Token JWT usado para acessar endpoints protegidos.
+    /// </summary>
     public string Token { get; set; } = string.Empty;
 }

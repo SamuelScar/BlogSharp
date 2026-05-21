@@ -69,6 +69,10 @@ O Swagger pode ser acessado em:
 http://localhost:5000/swagger/index.html
 ```
 
+### Autenticar no Swagger
+
+Para testar rotas protegidas, faça login em `POST /api/usuarios/login`, copie o valor do campo `token`, clique em `Authorize` no Swagger, cole apenas o token e confirme. Não é necessário escrever `Bearer` antes do token.
+
 O PostgreSQL ficará disponível em:
 
 ```text
@@ -117,6 +121,16 @@ Dentro da rede do Docker Compose, a API acessa o banco pelo host `database`.
 
 Os dados do PostgreSQL são mantidos no volume Docker `blogsharp_postgres_data`.
 
+### Migrations
+
+No fluxo normal com Docker, não é necessário rodar migrations manualmente. Ao iniciar em ambiente de desenvolvimento, os seeders aplicam migrations pendentes antes de inserir os dados iniciais.
+
+Se for necessário aplicar migrations manualmente, mantenha o PostgreSQL rodando e execute com o `dotnet-ef` instalado:
+
+```bash
+ASPNETCORE_ENVIRONMENT=Development dotnet ef database update --project src/BlogSharp.Api/BlogSharp.Api.csproj
+```
+
 ## Validações nos Models
 
 O projeto usa Data Annotations para declarar validações simples nos models, como `[Required]`, `[EmailAddress]` e `[StringLength]`. Isso deixa regras básicas visíveis na própria classe e ajuda o ASP.NET Core a validar dados recebidos pela API.
@@ -131,6 +145,8 @@ Os DTOs de resposta devem retornar apenas os campos necessários para o contrato
 
 No CRUD de postagens, o documento especifica que a postagem deve estar vinculada a um usuário e a um tema, mas não especifica que a resposta deve retornar os objetos completos de usuário e tema. Por isso, `PostagemResponse` retorna apenas `UsuarioId` e `TemaId`. Essa decisão foi tomada para evitar desperdício de código, processamento e envio desnecessário de dados.
 
+O projeto gera documentação XML para que o Swagger exiba os comentários escritos com `/// <summary>`. O warning `CS1591` foi desativado no `.csproj` porque nem toda classe, método ou propriedade pública precisa de comentário XML; a documentação deve ser usada apenas onde melhora o contrato da API.
+
 ## Autenticação JWT
 
 O token JWT do usuário guarda apenas dados úteis para identificação e autorização. Usamos o `Id` como identificador principal do usuário autenticado, o `Email` e o `Nome` como informações de contexto, e o `Tipo` como perfil de acesso para permitir regras futuras como rotas restritas a administradores.
@@ -142,6 +158,19 @@ Dados sensíveis, como senha ou hash da senha, não devem entrar no token. O obj
 As rotas de cadastro, login, listagem de temas e listagem/filtro de postagens são públicas. As rotas que alteram cadastros existentes, postagens ou temas exigem autenticação.
 
 Usuários podem atualizar e excluir o próprio cadastro. Administradores podem excluir qualquer usuário, mas não podem alterar dados pessoais de outros usuários.
+
+A regra de negócio adotada é que o cadastro público sempre cria usuários com o perfil `Usuario`. O perfil também não pode ser alterado pela rota comum de atualização de cadastro, porque alteração de privilégio é uma ação administrativa separada.
+
+Por isso, a API possui a rota `PATCH /api/usuarios/{id}/privilegio`, restrita a administradores. Essa rota aceita apenas `Usuario` ou `Admin` e não permite que o administrador autenticado altere o próprio perfil.
+
+Em ambiente de desenvolvimento, os seeders criam um administrador padrão para permitir o primeiro acesso administrativo:
+
+```text
+Email: admin@blogsharp.com
+Senha: Admin@123
+```
+
+Como o perfil de acesso fica gravado no JWT, a alteração de privilégio passa a valer no próximo login do usuário alterado. Tokens já emitidos continuam carregando o perfil antigo até expirarem.
 
 Postagens só podem ser criadas e atualizadas pelo próprio dono. Administradores não podem alterar o texto de postagens de outros usuários, mas podem excluir qualquer postagem para moderação.
 

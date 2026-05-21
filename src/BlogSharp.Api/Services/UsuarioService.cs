@@ -12,6 +12,9 @@ public class UsuarioService(
     IPasswordHasher<Usuario> passwordHasher,
     ITokenService tokenService) : IUsuarioService
 {
+    private const string TipoAdmin = "Admin";
+    private const string TipoUsuario = "Usuario";
+
     public async Task<UsuarioResponse> CadastrarAsync(UsuarioCadastro usuarioCadastro)
     {
         var emailCadastrado = await usuarioRepository.BuscarPorEmailAsync(usuarioCadastro.Email);
@@ -25,7 +28,7 @@ public class UsuarioService(
         {
             Nome = usuarioCadastro.Nome,
             Email = usuarioCadastro.Email,
-            Tipo = usuarioCadastro.Tipo,
+            Tipo = TipoUsuario,
             Foto = usuarioCadastro.Foto
         };
 
@@ -50,7 +53,6 @@ public class UsuarioService(
             Id = id,
             Nome = usuarioAtualizacao.Nome,
             Email = usuarioAtualizacao.Email,
-            Tipo = usuarioAtualizacao.Tipo,
             Foto = usuarioAtualizacao.Foto
         };
         var atualizarSenha = !string.IsNullOrWhiteSpace(usuarioAtualizacao.Senha);
@@ -62,14 +64,24 @@ public class UsuarioService(
 
         try
         {
-            var atualizado = await usuarioRepository.AtualizarAsync(id, usuario, atualizarSenha);
+            var usuarioAtualizado = await usuarioRepository.AtualizarAsync(id, usuario, atualizarSenha);
 
-            return atualizado ? MapearResponse(usuario) : null;
+            return usuarioAtualizado is null ? null : MapearResponse(usuarioAtualizado);
         }
         catch (DbUpdateException ex)
         {
             throw new ConflitoException("Email ja cadastrado.", ex);
         }
+    }
+
+    public async Task<UsuarioResponse?> AtualizarPrivilegioAsync(
+        long id,
+        UsuarioPrivilegioAtualizacao usuarioPrivilegioAtualizacao)
+    {
+        var tipo = ValidarTipo(usuarioPrivilegioAtualizacao.Tipo);
+        var usuario = await usuarioRepository.AtualizarTipoAsync(id, tipo);
+
+        return usuario is null ? null : MapearResponse(usuario);
     }
 
     public async Task<bool> ExcluirAsync(long id)
@@ -120,6 +132,16 @@ public class UsuarioService(
             Email = usuario.Email,
             Tipo = usuario.Tipo,
             Foto = usuario.Foto
+        };
+    }
+
+    private static string ValidarTipo(string tipo)
+    {
+        return tipo?.Trim() switch
+        {
+            TipoUsuario => TipoUsuario,
+            TipoAdmin => TipoAdmin,
+            _ => throw new RequisicaoInvalidaException("Tipo de usuario invalido. Use Usuario ou Admin.")
         };
     }
 }

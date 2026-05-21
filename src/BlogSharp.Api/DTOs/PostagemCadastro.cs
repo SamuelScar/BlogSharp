@@ -12,9 +12,15 @@ public class PostagemCadastro
     [StringLength(5000)]
     public string Conteudo { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Identificador do usuario autor. Deve ser o mesmo usuario do token.
+    /// </summary>
     [Range(1, long.MaxValue)]
     public long UsuarioId { get; set; }
 
+    /// <summary>
+    /// Identificador do tema vinculado a postagem.
+    /// </summary>
     [Range(1, long.MaxValue)]
     public long TemaId { get; set; }
 }

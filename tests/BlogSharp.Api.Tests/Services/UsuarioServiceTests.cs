@@ -22,7 +22,6 @@ public class UsuarioServiceTests
             Nome = "Samuel Teste",
             Email = "samuel.teste@email.com",
             Senha = "123456",
-            Tipo = "Usuario",
             Foto = FotoUrl
         };
 
@@ -33,9 +32,10 @@ public class UsuarioServiceTests
         Assert.Equal(1, response.Id);
         Assert.Equal(usuarioCadastro.Nome, response.Nome);
         Assert.Equal(usuarioCadastro.Email, response.Email);
-        Assert.Equal(usuarioCadastro.Tipo, response.Tipo);
+        Assert.Equal("Usuario", response.Tipo);
+        Assert.Equal("Usuario", usuarioSalvo!.Tipo);
         Assert.Equal(usuarioCadastro.Foto, response.Foto);
-        Assert.NotEqual(usuarioCadastro.Senha, usuarioSalvo!.SenhaHash);
+        Assert.NotEqual(usuarioCadastro.Senha, usuarioSalvo.SenhaHash);
         Assert.Equal(
             PasswordVerificationResult.Success,
             new PasswordHasher<Usuario>().VerifyHashedPassword(usuarioSalvo, usuarioSalvo.SenhaHash, usuarioCadastro.Senha));
@@ -57,8 +57,7 @@ public class UsuarioServiceTests
         {
             Nome = "Novo Usuario",
             Email = "existente@email.com",
-            Senha = "123456",
-            Tipo = "Usuario"
+            Senha = "123456"
         };
 
         var exception = await Assert.ThrowsAsync<ConflitoException>(() => service.CadastrarAsync(usuarioCadastro));
@@ -86,7 +85,6 @@ public class UsuarioServiceTests
             Nome = "Nome Novo",
             Email = "novo@email.com",
             Senha = "654321",
-            Tipo = "Admin",
             Foto = "https://example.com/nova.png"
         };
 
@@ -95,7 +93,8 @@ public class UsuarioServiceTests
         Assert.NotNull(response);
         Assert.Equal(usuarioAtualizacao.Nome, response!.Nome);
         Assert.Equal(usuarioAtualizacao.Email, response.Email);
-        Assert.Equal(usuarioAtualizacao.Tipo, response.Tipo);
+        Assert.Equal("Usuario", response.Tipo);
+        Assert.Equal("Usuario", usuario.Tipo);
         Assert.Equal(usuarioAtualizacao.Foto, response.Foto);
         Assert.Equal(
             PasswordVerificationResult.Success,
@@ -111,7 +110,7 @@ public class UsuarioServiceTests
         {
             Nome = "Nome Antigo",
             Email = "antigo@email.com",
-            Tipo = "Usuario"
+            Tipo = "Admin"
         };
         usuario.SenhaHash = passwordHasher.HashPassword(usuario, "123456");
         repository.AdicionarUsuario(usuario);
@@ -120,8 +119,7 @@ public class UsuarioServiceTests
         var usuarioAtualizacao = new UsuarioAtualizacao
         {
             Nome = "Nome Novo",
-            Email = "novo@email.com",
-            Tipo = "Admin"
+            Email = "novo@email.com"
         };
 
         var response = await service.AtualizarAsync(usuario.Id, usuarioAtualizacao);
@@ -129,7 +127,8 @@ public class UsuarioServiceTests
         Assert.NotNull(response);
         Assert.Equal(usuarioAtualizacao.Nome, response!.Nome);
         Assert.Equal(usuarioAtualizacao.Email, response.Email);
-        Assert.Equal(usuarioAtualizacao.Tipo, response.Tipo);
+        Assert.Equal("Admin", response.Tipo);
+        Assert.Equal("Admin", usuario.Tipo);
         Assert.Equal(senhaHashOriginal, usuario.SenhaHash);
     }
 
@@ -141,13 +140,67 @@ public class UsuarioServiceTests
         var usuarioAtualizacao = new UsuarioAtualizacao
         {
             Nome = "Nome",
-            Email = "email@email.com",
-            Tipo = "Usuario"
+            Email = "email@email.com"
         };
 
         var response = await service.AtualizarAsync(99, usuarioAtualizacao);
 
         Assert.Null(response);
+    }
+
+    [Fact]
+    public async Task AtualizarPrivilegioAsync_DeveAtualizarTipoQuandoUsuarioExiste()
+    {
+        var repository = new FakeUsuarioRepository();
+        var usuario = repository.AdicionarUsuario(new Usuario
+        {
+            Nome = "Usuario",
+            Email = "usuario@email.com",
+            SenhaHash = "hash",
+            Tipo = "Usuario"
+        });
+        var service = CriarService(repository);
+        var usuarioPrivilegioAtualizacao = new UsuarioPrivilegioAtualizacao
+        {
+            Tipo = "Admin"
+        };
+
+        var response = await service.AtualizarPrivilegioAsync(usuario.Id, usuarioPrivilegioAtualizacao);
+
+        Assert.NotNull(response);
+        Assert.Equal("Admin", response!.Tipo);
+        Assert.Equal("Admin", usuario.Tipo);
+    }
+
+    [Fact]
+    public async Task AtualizarPrivilegioAsync_DeveRetornarNullQuandoUsuarioNaoExiste()
+    {
+        var repository = new FakeUsuarioRepository();
+        var service = CriarService(repository);
+        var usuarioPrivilegioAtualizacao = new UsuarioPrivilegioAtualizacao
+        {
+            Tipo = "Admin"
+        };
+
+        var response = await service.AtualizarPrivilegioAsync(99, usuarioPrivilegioAtualizacao);
+
+        Assert.Null(response);
+    }
+
+    [Fact]
+    public async Task AtualizarPrivilegioAsync_DeveRecusarTipoInvalido()
+    {
+        var repository = new FakeUsuarioRepository();
+        var service = CriarService(repository);
+        var usuarioPrivilegioAtualizacao = new UsuarioPrivilegioAtualizacao
+        {
+            Tipo = "Moderador"
+        };
+
+        var exception = await Assert.ThrowsAsync<RequisicaoInvalidaException>(
+            () => service.AtualizarPrivilegioAsync(1, usuarioPrivilegioAtualizacao));
+
+        Assert.Equal("Tipo de usuario invalido. Use Usuario ou Admin.", exception.Message);
     }
 
     [Fact]
@@ -259,18 +312,17 @@ public class UsuarioServiceTests
             return Task.FromResult(usuario);
         }
 
-        public Task<bool> AtualizarAsync(long id, Usuario usuarioAtualizado, bool atualizarSenha)
+        public Task<Usuario?> AtualizarAsync(long id, Usuario usuarioAtualizado, bool atualizarSenha)
         {
             var usuario = usuarios.FirstOrDefault(usuario => usuario.Id == id);
 
             if (usuario is null)
             {
-                return Task.FromResult(false);
+                return Task.FromResult<Usuario?>(null);
             }
 
             usuario.Nome = usuarioAtualizado.Nome;
             usuario.Email = usuarioAtualizado.Email;
-            usuario.Tipo = usuarioAtualizado.Tipo;
             usuario.Foto = usuarioAtualizado.Foto;
 
             if (atualizarSenha)
@@ -278,7 +330,21 @@ public class UsuarioServiceTests
                 usuario.SenhaHash = usuarioAtualizado.SenhaHash;
             }
 
-            return Task.FromResult(true);
+            return Task.FromResult<Usuario?>(usuario);
+        }
+
+        public Task<Usuario?> AtualizarTipoAsync(long id, string tipo)
+        {
+            var usuario = usuarios.FirstOrDefault(usuario => usuario.Id == id);
+
+            if (usuario is null)
+            {
+                return Task.FromResult<Usuario?>(null);
+            }
+
+            usuario.Tipo = tipo;
+
+            return Task.FromResult<Usuario?>(usuario);
         }
 
         public Task<bool> ExcluirAsync(long id)

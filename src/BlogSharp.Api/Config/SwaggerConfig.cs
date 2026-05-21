@@ -1,5 +1,6 @@
 using BlogSharp.Api.Swagger;
 using Microsoft.OpenApi.Models;
+using System.Reflection;
 
 namespace BlogSharp.Api.Config;
 
@@ -18,6 +19,14 @@ public static class SwaggerConfig
                 Scheme = "bearer",
                 BearerFormat = "JWT"
             });
+
+            var xmlFileName = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlFilePath = Path.Combine(AppContext.BaseDirectory, xmlFileName);
+
+            if (File.Exists(xmlFilePath))
+            {
+                options.IncludeXmlComments(xmlFilePath);
+            }
 
             options.OperationFilter<AuthorizeOperationFilter>();
         });

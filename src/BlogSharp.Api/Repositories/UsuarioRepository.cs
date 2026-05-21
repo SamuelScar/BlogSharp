@@ -19,31 +19,43 @@ public class UsuarioRepository(BlogSharpDbContext context) : IUsuarioRepository
         return usuario;
     }
 
-    public async Task<bool> AtualizarAsync(long id, Usuario usuario, bool atualizarSenha)
+    public async Task<Usuario?> AtualizarAsync(long id, Usuario usuarioAtualizado, bool atualizarSenha)
     {
-        usuario.Id = id;
-        context.Usuarios.Attach(usuario);
+        var usuario = await context.Usuarios.FirstOrDefaultAsync(usuario => usuario.Id == id);
 
-        var entrada = context.Entry(usuario);
-        entrada.Property(usuarioBanco => usuarioBanco.Nome).IsModified = true;
-        entrada.Property(usuarioBanco => usuarioBanco.Email).IsModified = true;
-        entrada.Property(usuarioBanco => usuarioBanco.Tipo).IsModified = true;
-        entrada.Property(usuarioBanco => usuarioBanco.Foto).IsModified = true;
+        if (usuario is null)
+        {
+            return null;
+        }
+
+        usuario.Nome = usuarioAtualizado.Nome;
+        usuario.Email = usuarioAtualizado.Email;
+        usuario.Foto = usuarioAtualizado.Foto;
 
         if (atualizarSenha)
         {
-            entrada.Property(usuarioBanco => usuarioBanco.SenhaHash).IsModified = true;
+            usuario.SenhaHash = usuarioAtualizado.SenhaHash;
         }
 
-        try
+        await context.SaveChangesAsync();
+
+        return usuario;
+    }
+
+    public async Task<Usuario?> AtualizarTipoAsync(long id, string tipo)
+    {
+        var usuario = await context.Usuarios.FirstOrDefaultAsync(usuario => usuario.Id == id);
+
+        if (usuario is null)
         {
-            await context.SaveChangesAsync();
-            return true;
+            return null;
         }
-        catch (DbUpdateConcurrencyException)
-        {
-            return false;
-        }
+
+        usuario.Tipo = tipo;
+
+        await context.SaveChangesAsync();
+
+        return usuario;
     }
 
     public async Task<bool> ExcluirAsync(long id)

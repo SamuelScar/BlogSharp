@@ -17,9 +17,6 @@ public class UsuarioCadastro
     [StringLength(100, MinimumLength = 6)]
     public string Senha { get; set; } = string.Empty;
 
-    [StringLength(30)]
-    public string Tipo { get; set; } = "Usuario";
-
     [StringLength(500)]
     public string? Foto { get; set; }
 }
