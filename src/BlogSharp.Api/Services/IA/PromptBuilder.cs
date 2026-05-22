@@ -2,6 +2,9 @@ namespace BlogSharp.Api.Services.IA;
 
 public static class PromptBuilder
 {
+    /// <summary>
+    /// Monta o prompt que obriga a IA a responder no contrato JSON esperado pelo projeto.
+    /// </summary>
     public static string CriarPromptResumoPostagem(string conteudo)
     {
         return $$"""

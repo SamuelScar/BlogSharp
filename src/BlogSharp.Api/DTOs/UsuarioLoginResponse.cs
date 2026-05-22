@@ -8,6 +8,9 @@ public class UsuarioLoginResponse
 
     public string Email { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Perfil de acesso do usuario autenticado.
+    /// </summary>
     public string Tipo { get; set; } = string.Empty;
 
     public string? Foto { get; set; }

@@ -4,6 +4,9 @@ namespace BlogSharp.Api.Commands;
 
 public static class AppCommandRunner
 {
+    /// <summary>
+    /// Executa comandos auxiliares da aplicacao, como a geracao manual de seeds.
+    /// </summary>
     public static async Task<bool> ExecutarAsync(string[] args, IServiceProvider services)
     {
         if (args.Length == 0 || !args[0].Equals("seed", StringComparison.OrdinalIgnoreCase))

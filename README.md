@@ -1,222 +1,220 @@
 # BlogSharp
 
-BlogSharp é uma API backend para um Blog Pessoal, desenvolvida em ASP.NET Core 8.
-O projeto será evoluído em camadas, com persistência de dados, autenticação JWT e análise de qualidade com SonarQube.
+BlogSharp é uma API backend para um Blog Pessoal, desenvolvida em [ASP.NET Core 8](https://learn.microsoft.com/aspnet/core), [PostgreSQL](https://www.postgresql.org/), [Docker](https://www.docker.com/), [JWT](https://jwt.io/), integração com IA e análise de qualidade com [SonarQube](https://www.sonarsource.com/products/sonarqube/).
+
+Eu mantive este README focado em duas coisas: como rodar o projeto e quais decisões técnicas foram tomadas. Endpoints e contratos detalhados ficam no Swagger, porque ele reflete a API executável.
 
 ## Sumário
 
-- [Como rodar o projeto](#como-rodar-o-projeto)
-- [Tecnologias utilizadas](#tecnologias-utilizadas)
-- [Banco de dados](#banco-de-dados)
-- [Contratos da API](#contratos-da-api)
-- [Integração com IA](#integração-com-ia)
-- [Testes](#testes)
-- [Seeders](#seeders)
-- [SonarQube](#sonarqube)
-- [Licença](#licença)
+- [1. Pré-requisitos](#1-pré-requisitos)
+- [2. Configuração do ambiente](#2-configuração-do-ambiente)
+- [3. Executando a aplicação](#3-executando-a-aplicação)
+- [4. Swagger e autenticação](#4-swagger-e-autenticação)
+- [5. Banco de dados e migrations](#5-banco-de-dados-e-migrations)
+- [6. Seeders](#6-seeders)
+  - [6.1. Seed automático](#61-seed-automático)
+  - [6.2. Seed manual](#62-seed-manual)
+- [7. Integração com IA](#7-integração-com-ia)
+- [8. Testes](#8-testes)
+- [9. SonarQube](#9-sonarqube)
+  - [9.1. Subir o SonarQube](#91-subir-o-sonarqube)
+  - [9.2. Configurar token](#92-configurar-token)
+  - [9.3. Instalar scanner](#93-instalar-scanner)
+  - [9.4. Rodar análise](#94-rodar-análise)
+- [10. Decisões do projeto](#10-decisões-do-projeto)
+  - [10.1. DTOs e contratos mínimos](#101-dtos-e-contratos-mínimos)
+  - [10.2. Data Annotations](#102-data-annotations)
+  - [10.3. Operações assíncronas](#103-operações-assíncronas)
+  - [10.4. Regras de acesso](#104-regras-de-acesso)
+  - [10.5. Integração com IA](#105-integração-com-ia)
+  - [10.6. Segredos fora do código](#106-segredos-fora-do-código)
+  - [10.7. SonarQube como ferramenta de inspeção](#107-sonarqube-como-ferramenta-de-inspeção)
+  - [10.8. Hotspot do Dockerfile](#108-hotspot-do-dockerfile)
+- [11. Licença](#11-licença)
 
-## Como rodar o projeto
+## 1. Pré-requisitos
 
-No estado atual, o projeto já possui serviços Docker para executar a API e o banco PostgreSQL em ambiente de desenvolvimento.
+- [Docker](https://docs.docker.com/get-started/)
+- [Docker Compose v2](https://docs.docker.com/compose/)
+- [.NET SDK 8](https://dotnet.microsoft.com/download/dotnet/8.0), para rodar testes, migrations manuais ou SonarQube pela máquina local
+- [`dotnet-sonarscanner`](https://docs.sonarsource.com/sonarqube-server/analyzing-source-code/scanners/dotnet/introduction/), apenas para executar a análise do SonarQube
 
-### Pré-requisitos
+## 2. Configuração do ambiente
 
-- Docker
-- Docker Compose v2
-
-### Configurar variáveis de ambiente
-
-Crie o arquivo `.env` na raiz do projeto usando `.env.example` como base:
+Crie o arquivo `.env` na raiz do projeto usando o [.env.example](.env.example) como base:
 
 ```bash
 cp .env.example .env
 ```
 
-Para desenvolvimento local, mantenha os dados do banco alinhados com o `docker-compose.yml`, defina uma chave JWT com pelo menos 32 caracteres e mantenha a integração com IA desabilitada até a escolha do provedor:
+Configuração mínima para desenvolvimento local:
 
 ```env
 POSTGRES_DB=blogsharp
 POSTGRES_USER=blogsharp
 POSTGRES_PASSWORD=blogsharp_password
 JWT_SECRET_KEY=troque_por_uma_chave_segura_com_pelo_menos_32_caracteres
+
 IA_ENABLED=false
-IA_PROVIDER=
-IA_BASE_URL=
+IA_PROVIDER=OpenRouter
+IA_BASE_URL=https://openrouter.ai
 IA_API_KEY=
 IA_MODEL=
+IA_SITE_URL=
+IA_APP_NAME=BlogSharp
+
 HOST_UID=1000
 HOST_GID=1000
+
+SONAR_TOKEN=
 ```
 
-`HOST_UID` e `HOST_GID` devem representar o usuário do host que executa o Docker. Em Linux, geralmente é possível consultar com:
+`HOST_UID` e `HOST_GID` são usados apenas para evitar problema de permissão em arquivos gerados pelo container no Linux. Na maioria das instalações Linux o valor `1000` já funciona; se der problema de permissão em `bin/`, `obj/` ou arquivos gerados pelo Docker, confira os valores com:
 
 ```bash
 id -u
 id -g
 ```
 
-### Subir a API
+Sempre que alterar variáveis do `.env`, recrie o container da API para que o Docker Compose injete os novos valores:
 
-Na raiz do projeto, execute:
+```bash
+docker compose up -d --force-recreate api
+```
+
+## 3. Executando a aplicação
+
+Na raiz do projeto, suba a API e o PostgreSQL:
 
 ```bash
 docker compose up --build
 ```
 
-A API ficará disponível em:
+API: [http://localhost:5000](http://localhost:5000)
 
-```text
-http://localhost:5000
-```
+PostgreSQL: `localhost:5432`
 
-O Swagger pode ser acessado em:
-
-```text
-http://localhost:5000/swagger/index.html
-```
-
-### Autenticar no Swagger
-
-Para testar rotas protegidas, faça login em `POST /api/usuarios/login`, copie o valor do campo `token`, clique em `Authorize` no Swagger, cole apenas o token e confirme. Não é necessário escrever `Bearer` antes do token.
-
-O PostgreSQL ficará disponível em:
-
-```text
-localhost:5432
-```
-
-### Parar os containers
-
-Para encerrar o ambiente:
+Para parar os containers:
 
 ```bash
 docker compose down
 ```
 
-## Tecnologias utilizadas
+Para parar e remover também os volumes locais:
 
-- C# / .NET 8
-- ASP.NET Core Web API
-- Entity Framework Core
-- PostgreSQL
-- Docker e Docker Compose
-- Swagger / Swashbuckle
-- JWT Bearer
-- xUnit
-- SonarQube
-
-## Banco de dados
-
-O projeto utiliza PostgreSQL como banco de dados relacional.
-
-O serviço do banco é criado pelo `docker-compose.yml` com os seguintes dados de desenvolvimento:
-
-```text
-Host: localhost
-Porta: 5432
-Database: blogsharp
-Usuário: blogsharp
-Senha: blogsharp_password
+```bash
+docker compose down -v
 ```
 
-Esses valores ficam no arquivo `.env` da raiz do projeto. O arquivo `.env.example` serve como modelo para configurar o ambiente local.
+Use `down -v` apenas quando quiser apagar os dados locais do PostgreSQL.
 
-As variáveis `HOST_UID` e `HOST_GID` definem o usuário usado pelo container da API durante o desenvolvimento. Isso evita que arquivos gerados pelo `dotnet watch`, como `bin/` e `obj/`, fiquem com permissões incorretas no host.
+## 4. Swagger e autenticação
 
-Dentro da rede do Docker Compose, a API acessa o banco pelo host `database`.
+O Swagger pode ser acessado em [http://localhost:5000/swagger/index.html](http://localhost:5000/swagger/index.html).
 
-Os dados do PostgreSQL são mantidos no volume Docker `blogsharp_postgres_data`.
+Para testar rotas protegidas:
 
-### Migrations
+1. Faça login no endpoint `POST /api/usuarios/login`.
+2. Copie o valor retornado no campo `token`.
+3. Clique em `Authorize` no Swagger.
+4. Cole apenas o token e confirme.
+
+## 5. Banco de dados e migrations
+
+O projeto usa [PostgreSQL](https://www.postgresql.org/) como banco relacional. Dentro da rede do [Docker Compose](https://docs.docker.com/compose/), a API acessa o banco pelo host `database`.
+
+Os dados ficam no volume Docker `blogsharp_postgres_data`.
 
 No fluxo normal com Docker, não é necessário rodar migrations manualmente. Ao iniciar em ambiente de desenvolvimento, os seeders aplicam migrations pendentes antes de inserir os dados iniciais.
 
-Se for necessário aplicar migrations manualmente, mantenha o PostgreSQL rodando e execute com o `dotnet-ef` instalado:
+Se eu quiser aplicar migrations fora desse fluxo automático, com o PostgreSQL já rodando, uso:
 
 ```bash
 ASPNETCORE_ENVIRONMENT=Development dotnet ef database update --project src/BlogSharp.Api/BlogSharp.Api.csproj
 ```
 
-## Validações nos Models
+## 6. Seeders
 
-O projeto usa Data Annotations para declarar validações simples nos models, como `[Required]`, `[EmailAddress]` e `[StringLength]`. Isso deixa regras básicas visíveis na própria classe e ajuda o ASP.NET Core a validar dados recebidos pela API.
+Eu mantive dois modos de seed: um automático para dados mínimos de desenvolvimento e outro manual para criar massa de dados quando for necessário testar melhor a aplicação.
 
-As validações de entrada também devem ser reforçadas nos DTOs, porque eles representam o contrato das requisições e respostas da API.
+### 6.1. Seed automático
 
-No CRUD de usuários, os DTOs foram separados conforme o formato necessário em cada chamada. Criamos DTOs de entrada para cadastro, atualização e login, e reutilizamos `UsuarioResponse` nas chamadas que retornam os mesmos dados públicos do usuário. Uma resposta separada só foi criada quando a saída muda da entrada, como em `UsuarioLoginResponse`, que também retorna o token JWT.
+Quando a API inicia em ambiente `Development`, os seeders fixos executam:
 
-## Contratos da API
+- aplicam migrations pendentes;
+- criam usuários fixos se os emails ainda não existirem;
+- criam um tema inicial se ele ainda não existir;
+- criam uma postagem inicial se ela ainda não existir.
 
-Os DTOs de resposta devem retornar apenas os campos necessários para o contrato do endpoint. Quando a especificação não pedir um campo, objeto aninhado ou relacionamento completo, a decisão do projeto é não incluir esse dado automaticamente.
+Usuários disponíveis para testes:
 
-No CRUD de postagens, o documento especifica que a postagem deve estar vinculada a um usuário e a um tema, mas não especifica que a resposta deve retornar os objetos completos de usuário e tema. Por isso, `PostagemResponse` retorna apenas `UsuarioId` e `TemaId`. Essa decisão foi tomada para evitar desperdício de código, processamento e envio desnecessário de dados.
+| Perfil | Email | Senha |
+| --- | --- | --- |
+| Admin | `admin@blogsharp.com` | `Admin@123` |
+| Usuario | `usuario@blogsharp.com` | `Usuario@123` |
 
-O projeto gera documentação XML para que o Swagger exiba os comentários escritos com `/// <summary>`. O warning `CS1591` foi desativado no `.csproj` porque nem toda classe, método ou propriedade pública precisa de comentário XML; a documentação deve ser usada apenas onde melhora o contrato da API.
 
-## Integração com IA
+### 6.2. Seed manual
 
-Ao cadastrar uma postagem, a API está preparada para enviar o conteúdo para um provedor externo de IA e salvar na postagem o resumo, a categoria e as tags retornadas.
+Para criar dados aleatórios, use os comandos abaixo com a API em execução:
 
-O provedor ainda não está definido. A integração fica controlada pelas variáveis genéricas `IA_ENABLED`, `IA_PROVIDER`, `IA_BASE_URL`, `IA_API_KEY` e `IA_MODEL`. No Docker Compose, esses valores são enviados para a aplicação como `IA__Enabled`, `IA__Provider`, `IA__BaseUrl`, `IA__ApiKey` e `IA__Model`.
+```bash
+docker compose exec api dotnet run -- seed usuarios 10
+docker compose exec api dotnet run -- seed temas 5
+docker compose exec api dotnet run -- seed postagens 20
+```
 
-Enquanto `IA_ENABLED=false`, o cadastro de postagens continua funcionando e os campos `ResumoIA`, `TagsIA` e `CategoriaIA` ficam vazios. Quando o provedor for escolhido, a implementação específica deve ser conectada à interface `IIAProvider`.
+O número final define a quantidade de registros que será criada.
+
+Usuários aleatórios usam emails únicos no domínio `seed.blogsharp.local` e senha padrão:
+
+```text
+Senha@123
+```
+
+As postagens aleatórias são vinculadas a usuários e temas já cadastrados. Se os dados fixos ainda não existirem, o seeder manual de postagens cria antes os usuários e o tema inicial.
+
+## 7. Integração com IA
+
+Quando a integração está habilitada, ao cadastrar uma postagem a API envia o conteúdo para um provedor externo de IA e salva na postagem:
+
+- resumo;
+- tags;
+- categoria.
+
+A integração fica desabilitada por padrão:
+
+```env
+IA_ENABLED=false
+```
+
+Com a IA desabilitada, o cadastro de postagens continua funcionando e os campos `ResumoIA`, `TagsIA` e `CategoriaIA` ficam vazios.
+
+Para habilitar:
+
+```env
+IA_ENABLED=true
+IA_PROVIDER=OpenRouter
+IA_BASE_URL=https://openrouter.ai
+IA_API_KEY=sua_chave_da_openrouter
+IA_MODEL=openai/gpt-5.2
+IA_SITE_URL=http://localhost:5000
+IA_APP_NAME=BlogSharp
+```
+
+Depois de alterar o `.env`, recrie o container da API:
+
+```bash
+docker compose up -d --force-recreate api
+```
 
 Também existe a rota protegida `POST /api/ia/resumir`, usada para gerar resumo, categoria e tags a partir de um texto sem criar uma postagem.
 
-Se a integração estiver desabilitada ou sem provedor configurado, essa rota retorna erro de integração com IA em vez de chamar uma API externa.
+## 8. Testes
 
-## Autenticação JWT
+Os testes ficam em [tests/BlogSharp.Api.Tests](tests/BlogSharp.Api.Tests).
 
-O token JWT do usuário guarda apenas dados úteis para identificação e autorização. Usamos o `Id` como identificador principal do usuário autenticado, o `Email` e o `Nome` como informações de contexto, e o `Tipo` como perfil de acesso para permitir regras futuras como rotas restritas a administradores.
-
-Dados sensíveis, como senha ou hash da senha, não devem entrar no token. O objetivo é manter o JWT suficiente para validar a identidade do usuário sem transformar o token em uma cópia completa do cadastro.
-
-## Regras de Acesso
-
-As rotas de cadastro, login, listagem de temas e listagem/filtro de postagens são públicas. As rotas que alteram cadastros existentes, postagens, temas ou que consomem IA exigem autenticação.
-
-Usuários podem atualizar e excluir o próprio cadastro. Administradores podem excluir qualquer usuário, mas não podem alterar dados pessoais de outros usuários.
-
-A regra de negócio adotada é que o cadastro público sempre cria usuários com o perfil `Usuario`. O perfil também não pode ser alterado pela rota comum de atualização de cadastro, porque alteração de privilégio é uma ação administrativa separada.
-
-Por isso, a API possui a rota `PATCH /api/usuarios/{id}/privilegio`, restrita a administradores. Essa rota aceita apenas `Usuario` ou `Admin` e não permite que o administrador autenticado altere o próprio perfil.
-
-Em ambiente de desenvolvimento, os seeders criam um administrador padrão para permitir o primeiro acesso administrativo:
-
-```text
-Email: admin@blogsharp.com
-Senha: Admin@123
-```
-
-Como o perfil de acesso fica gravado no JWT, a alteração de privilégio passa a valer no próximo login do usuário alterado. Tokens já emitidos continuam carregando o perfil antigo até expirarem.
-
-Postagens só podem ser criadas e atualizadas pelo próprio dono. Administradores não podem alterar o texto de postagens de outros usuários, mas podem excluir qualquer postagem para moderação.
-
-Temas são administrados apenas por usuários do tipo `Admin`.
-
-As regras que precisam ler o usuário autenticado usam o helper `AuthUserExtensions`, em `Security/`. Ele não substitui o middleware de autenticação: o middleware valida o JWT e monta o usuário da requisição, enquanto o helper apenas lê o `Id` e o perfil `Admin` já presentes no token. O PDF define a estrutura base do projeto, mas não proíbe uma pasta auxiliar para organizar regras de segurança.
-
-## Tratamento de Erros
-
-O projeto usa `ErroResponse` para padronizar respostas de erro com o campo `mensagem`. Erros esperados de regra de negócio são lançados como exceções específicas e convertidos pelo `ExceptionMiddleware` para códigos HTTP coerentes, como `404 Not Found` e `409 Conflict`.
-
-Erros inesperados também são capturados pelo `ExceptionMiddleware` e retornam:
-
-```json
-{
-  "mensagem": "Erro interno no servidor."
-}
-```
-
-## Testes
-
-Os testes ficam em `tests/BlogSharp.Api.Tests`.
-
-Os testes unitários cobrem as regras principais do `UsuarioService`, `TemaService` e `PostagemService`, usando fakes simples para repositories e token.
-
-Os testes de integração sobem a API em memória e validam fluxos HTTP principais, como cadastro, login, autorização JWT, criação de temas por administrador e criação/filtro de postagens.
-
-Para executar todos os testes, unitários e de integração:
+Para executar todos os testes:
 
 ```bash
 dotnet test BlogSharp.sln
@@ -228,161 +226,109 @@ Para executar apenas os testes de integração:
 dotnet test BlogSharp.sln --filter FullyQualifiedName~Integration
 ```
 
-## Seeders
+Os testes unitários cobrem regras de service e provider de IA com fakes simples. Os testes de integração sobem a API em memória e validam fluxos HTTP principais.
 
-O projeto usa seeders para facilitar testes locais com dados mínimos.
+## 9. SonarQube
 
-O primeiro modo é o seeder fixo automático. Ele roda quando a API inicia em ambiente de desenvolvimento. A migration não chama o seeder; é o seeder que aplica migrations pendentes antes de inserir os dados iniciais.
+O projeto possui um serviço [Docker](https://docs.docker.com/) para rodar o [SonarQube](https://www.sonarsource.com/products/sonarqube/) localmente. Ele fica no profile `quality` para não subir junto com API e banco quando eu só quero desenvolver ou testar a aplicação.
 
-Fluxo ao subir a API:
-
-```text
-API iniciou em Development
-Seeders fixos executam
-Migrations pendentes são aplicadas
-Usuários fixos são criados se os emails ainda não existirem
-Tema fixo é criado se ainda não existir
-Postagem fixa é criada se ainda não existir
-```
-
-Usuários disponíveis para testes:
-
-| Perfil | Email | Senha |
-| --- | --- | --- |
-| Admin | `admin@blogsharp.com` | `Admin@123` |
-| Usuario | `usuario@blogsharp.com` | `Usuario@123` |
-
-Tema inicial disponível para testes:
-
-```text
-Tecnologia
-```
-
-Postagem inicial disponível para testes:
-
-```text
-Primeira postagem BlogSharp
-```
-
-O segundo modo é o seeder dinâmico manual. Ele deve ser executado pela linha de comando quando for necessário criar uma massa maior de usuários, temas ou postagens para simular uso real:
-
-```bash
-docker compose exec api dotnet run -- seed usuarios 10
-docker compose exec api dotnet run -- seed temas 5
-docker compose exec api dotnet run -- seed postagens 20
-```
-
-O número final define quantos usuários serão criados. Os usuários aleatórios usam emails únicos no domínio `seed.blogsharp.local`, tipo `Usuario` ou `Admin`, foto como URL e senha padrão `Senha@123`.
-
-No caso de temas, o número final define quantos temas serão criados. As descrições são geradas com base em nomes simples, como `Tecnologia`, `Programacao`, `Backend` e `Dotnet`, com um sufixo único para evitar duplicação.
-
-No caso de postagens, o número final define quantas postagens serão criadas. As postagens são vinculadas a usuários e temas já cadastrados. Se os dados fixos ainda não existirem, o seeder manual de postagens cria antes os usuários e o tema inicial.
-
-## Operações Assíncronas
-
-As interfaces de services e repositories usam `Task` e o sufixo `Async` porque essas camadas irão acessar o banco com Entity Framework Core. Acesso ao banco é uma operação de I/O: a requisição precisa aguardar a resposta do PostgreSQL, mas a thread do ASP.NET Core não precisa ficar bloqueada enquanto isso acontece.
-
-O EF Core oferece métodos assíncronos para operações que executam I/O, como `ToListAsync`, `FirstOrDefaultAsync` e `SaveChangesAsync`. A documentação de boas práticas do ASP.NET Core também recomenda chamar APIs de acesso a dados de forma assíncrona quando elas estiverem disponíveis.
-
-Usar `async/await` não elimina a espera da requisição e não resolve sozinho problemas de concorrência. O cuidado principal é não executar múltiplas operações paralelas no mesmo `DbContext`. Para regras de consistência, o projeto ainda deve usar constraints, índices únicos, chaves estrangeiras e transações quando necessário.
-
-Referências:
-
-- [Asynchronous Programming - EF Core](https://learn.microsoft.com/en-us/ef/core/miscellaneous/async)
-- [ASP.NET Core Best Practices](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/best-practices)
-
-## SonarQube
-
-O projeto possui um serviço Docker para rodar o SonarQube localmente e analisar a qualidade do código.
-
-Como o SonarQube não é necessário para executar a API no dia a dia, ele fica no profile `quality` do Docker Compose.
-
-O profile `quality` é apenas uma separação operacional do Docker Compose. Ele não representa uma obrigação de cumprir o Quality Gate padrão do SonarQube.
-
-O PDF do desafio pede configuração do SonarQube, integração com o build, uso das métricas e geração de relatórios. Ele não define meta mínima de cobertura, não exige o Quality Gate `Sonar Way` e não pede aprovação obrigatória em 80% de cobertura.
-
-Por isso, neste projeto o SonarQube será usado como ferramenta de inspeção. O foco é corrigir problemas reais apontados pela análise, como bugs, vulnerabilidades, hotspots relevantes e más práticas. A cobertura continuará disponível como métrica auxiliar, mas não será usada para criar testes artificiais apenas para atingir porcentagem.
-
-### 1. Subir o SonarQube
-
-Na raiz do projeto, execute:
+### 9.1. Subir o SonarQube
 
 ```bash
 docker compose --profile quality up -d sonarqube
 ```
 
-O painel ficará disponível em:
+Painel: [http://localhost:9000](http://localhost:9000)
+
+No primeiro acesso, use:
 
 ```text
-http://localhost:9000
+Login: admin
+Senha: admin
 ```
 
-No primeiro acesso, use o login padrão `admin` e senha `admin`. O SonarQube irá solicitar a troca da senha.
+O SonarQube irá solicitar a troca da senha.
 
-Esta configuração usa o banco interno do SonarQube, suficiente para ambiente local de estudo e análise inicial.
+### 9.2. Configurar token
 
-### 2. Configurar o token
-
-O token do SonarQube deve ficar apenas no `.env` local, na variável `SONAR_TOKEN`. Essa decisão evita colocar segredo em arquivo versionado.
+Crie um token no [SonarQube](https://docs.sonarsource.com/sonarqube-server/user-guide/managing-tokens/) e adicione no `.env`:
 
 ```env
 SONAR_TOKEN=seu_token_do_sonarqube
 ```
 
-### 3. Instalar o scanner
+### 9.3. Instalar scanner
 
-A análise não é executada dentro do container do SonarQube. O container `sonarqube` funciona como servidor e painel web. Quem analisa o código é o `dotnet-sonarscanner`, executado na máquina local junto com o build do projeto.
-
-Caso ainda não tenha o scanner instalado:
+A análise é executada pela máquina local, não dentro do container do SonarQube.
 
 ```bash
 dotnet tool install --global dotnet-sonarscanner
 ```
 
-Se o terminal não reconhecer `dotnet sonarscanner`, feche e abra o terminal ou adicione as ferramentas globais ao `PATH`:
+### 9.4. Rodar análise
 
-```bash
-export PATH="$PATH:$HOME/.dotnet/tools"
-```
-
-### 4. Executar a análise
-
-O projeto usa o fluxo oficial do `dotnet-sonarscanner` para aplicações .NET: `begin`, `build`, testes com cobertura e `end`. As configurações da análise ficam no script `scripts/sonar.sh`, em vez de `sonar-project.properties`, porque o scanner .NET não usa esse arquivo.
-
-Durante a análise, o script executa os testes com Coverlet e gera um relatório OpenCover em `.sonarqube/coverage/coverage.opencover.xml`. Esse relatório é enviado ao SonarQube para preencher a métrica de cobertura.
-
-Para consultar a cobertura por pasta e arquivo sem depender da navegação manual no SonarQube:
-
-```bash
-./scripts/coverage-report.sh
-```
-
-O relatório local será gerado em `.sonarqube/coverage/coverage-report.md`.
-
-Para rodar:
+O projeto usa o script `scripts/sonar.sh` para evitar repetir manualmente o fluxo `begin`, `build`, `test` e `end` do scanner .NET.
 
 ```bash
 ./scripts/sonar.sh
 ```
 
-Ao final da execução, o relatório fica disponível em:
+Ao final, o relatório fica em [http://localhost:9000/dashboard?id=BlogSharp](http://localhost:9000/dashboard?id=BlogSharp).
 
-```text
-http://localhost:9000/dashboard?id=BlogSharp
-```
+## 10. Decisões do projeto
 
-### Hotspot do Dockerfile
+### 10.1. DTOs e contratos mínimos
 
-O SonarQube aponta um hotspot no `Dockerfile` porque a imagem base do SDK .NET pode executar como `root` quando usada isoladamente.
+Eu optei por respostas com apenas os campos necessários para cada endpoint. No caso de `PostagemResponse`, o PDF pede que a postagem esteja vinculada a usuário e tema, mas não exige retornar os objetos completos. Por isso, a resposta retorna `UsuarioId` e `TemaId`, sem expandir `UsuarioResponse` ou `TemaResponse`.
 
-No fluxo atual do projeto, esse risco foi revisado como seguro para o ambiente local, pois a API é executada pelo Docker Compose com o usuário do host:
+Essa escolha evita carregar e trafegar dados que o contrato não pediu.
+
+### 10.2. Data Annotations
+
+Eu usei [Data Annotations](https://learn.microsoft.com/dotnet/api/system.componentmodel.dataannotations) para validações simples, como campos obrigatórios, email e tamanho de texto. Isso deixa regras básicas visíveis nos DTOs e models sem criar uma camada extra só para validações simples.
+
+### 10.3. Operações assíncronas
+
+Services e repositories usam `Task` e o sufixo `Async` porque acessam o banco com [Entity Framework Core](https://learn.microsoft.com/ef/core/). Como acesso ao banco é uma operação de I/O, o `async/await` evita bloquear a thread do [ASP.NET Core](https://learn.microsoft.com/aspnet/core) enquanto o PostgreSQL responde.
+
+### 10.4. Regras de acesso
+
+O PDF define autenticação e controle por tipo de usuário, mas não detalha todas as regras finas. Eu defini regras explícitas para evitar comportamento ambíguo:
+
+- cadastro público sempre cria usuário comum;
+- usuário pode atualizar e excluir o próprio cadastro;
+- administrador pode excluir usuários;
+- alteração de privilégio fica em rota administrativa separada;
+- dono pode criar e atualizar a própria postagem;
+- administrador pode excluir postagens para moderação;
+- temas são administrados apenas por administradores.
+
+### 10.5. Integração com IA
+
+O PDF sugere [OpenAI API](https://platform.openai.com/docs), [Gemini API](https://ai.google.dev/gemini-api/docs) ou [Azure AI Services](https://azure.microsoft.com/products/ai-services). Eu usei [OpenRouter](https://openrouter.ai/) com um modelo da OpenAI por uma questão prática: durante os testes, o Gemini retornou erro `403` de chave inválida mesmo com contas e chaves diferentes; a API direta da OpenAI exige créditos pagos; e o Azure ficou burocrático demais para este escopo, porque exige várias etapas de cadastro e configuração só para conseguir uma chave de API.
+
+Com OpenRouter, o projeto mantém o objetivo do desafio: consumir uma API externa de IA, tratar resposta JSON e enriquecer postagens com resumo, tags e categoria. Também deixei `IA_ENABLED=false` por padrão para a API continuar funcionando mesmo sem chave de IA configurada.
+
+### 10.6. Segredos fora do código
+
+Chave JWT, token do SonarQube e chave da IA ficam no `.env` local. O repositório versiona apenas [.env.example](.env.example), sem valores sensíveis.
+
+### 10.7. SonarQube como ferramenta de inspeção
+
+O PDF pede SonarQube, integração com build, métricas e relatórios, mas não define meta mínima de cobertura nem exige aprovação obrigatória no Quality Gate padrão. Por isso, eu uso o SonarQube como ferramenta de inspeção: corrigir bugs, vulnerabilidades, hotspots relevantes e más práticas, sem criar testes artificiais apenas para subir porcentagem.
+
+### 10.8. Hotspot do Dockerfile
+
+O SonarQube aponta hotspot no [Dockerfile](Dockerfile) porque a imagem base do SDK .NET pode executar como `root` quando usada isoladamente.
+
+No fluxo atual, considerei esse risco aceitável para ambiente local porque a API roda pelo Docker Compose com o usuário do host:
 
 ```yaml
 user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
 ```
 
-Essa decisão evita alterar o Dockerfile de desenvolvimento sem necessidade e mantém o funcionamento do `dotnet watch` com volume montado. Caso seja criado um Dockerfile de produção, a imagem deve definir um usuário não-root diretamente.
+Se o projeto ganhar um Dockerfile de produção, a imagem deve definir um usuário não-root diretamente.
 
-## Licença
+## 11. Licença
 
-Este projeto está licenciado conforme o arquivo `LICENSE`.
+Este projeto está licenciado conforme o arquivo [LICENSE](LICENSE).
