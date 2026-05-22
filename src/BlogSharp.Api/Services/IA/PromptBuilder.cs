@@ -4,7 +4,7 @@ public static class PromptBuilder
 {
     public static string CriarPromptResumoPostagem(string conteudo)
     {
-        return $"""
+        return $$"""
             Analise o texto de uma postagem de blog pessoal conforme o desafio de IA do projeto.
 
             A IA deve gerar somente os dados definidos na documentacao:
@@ -24,10 +24,10 @@ public static class PromptBuilder
             - Baseie a resposta apenas no texto da postagem.
 
             Formato esperado:
-            {{"resumo":"Resumo curto da postagem.","tags":"API, REST, ASP.NET Core","categoria":"Tecnologia"}}
+            {"resumo":"Resumo curto da postagem.","tags":"API, REST, ASP.NET Core","categoria":"Tecnologia"}
 
             Texto da postagem:
-            {conteudo}
+            {{conteudo}}
             """;
     }
 }
