@@ -1,32 +1,13 @@
 using BlogSharp.Api.Commands;
 using BlogSharp.Api.Config;
-using BlogSharp.Api.Data;
-using BlogSharp.Api.Data.Seeders;
 using BlogSharp.Api.Middlewares;
-using BlogSharp.Api.Models;
-using BlogSharp.Api.Repositories;
-using BlogSharp.Api.Services;
-using BlogSharp.Api.Services.IA;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<BlogSharpDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddScoped<ITemaRepository, TemaRepository>();
-builder.Services.AddScoped<ITemaService, TemaService>();
-builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
-builder.Services.AddScoped<IUsuarioService, UsuarioService>();
-builder.Services.AddScoped<IPostagemRepository, PostagemRepository>();
-builder.Services.AddScoped<IPostagemService, PostagemService>();
-builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
-builder.Services.Configure<IAOptions>(builder.Configuration.GetSection("IA"));
-builder.Services.AddScoped<IIAProvider, IAProviderNaoConfigurado>();
-builder.Services.AddScoped<IIAService, IAService>();
-
+builder.Services.AddDatabase(builder.Configuration);
+builder.Services.AddRepositories();
+builder.Services.AddApplicationServices();
+builder.Services.AddIA(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerComJwt();
@@ -40,12 +21,7 @@ if (await AppCommandRunner.ExecutarAsync(args, app.Services))
     return;
 }
 
-if (app.Environment.IsDevelopment())
-{
-    await app.Services.SeedUsuariosAsync();
-    await app.Services.SeedTemasAsync();
-    await app.Services.SeedPostagensAsync();
-}
+await app.SeedDevelopmentDataAsync();
 
 app.UseMiddleware<ExceptionMiddleware>();
 

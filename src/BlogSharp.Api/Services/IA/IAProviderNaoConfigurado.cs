@@ -5,7 +5,7 @@ namespace BlogSharp.Api.Services.IA;
 
 public class IAProviderNaoConfigurado : IIAProvider
 {
-    public Task<ResultadoIA> GerarResumoAsync(string _)
+    public Task<ResultadoIA> GerarResumoAsync(string conteudo)
     {
         throw new IntegracaoIAException("Provedor de IA ainda nao configurado.");
     }

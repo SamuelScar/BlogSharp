@@ -24,6 +24,8 @@ services:
       IA__BaseUrl: ${IA_BASE_URL:-}
       IA__ApiKey: ${IA_API_KEY:-}
       IA__Model: ${IA_MODEL:-}
+      IA__SiteUrl: ${IA_SITE_URL:-}
+      IA__AppName: ${IA_APP_NAME:-BlogSharp}
 
   database:
     image: postgres:16-alpine
