@@ -51,8 +51,12 @@ public class OpenRouterIAProvider(
 
         try
         {
-            return JsonSerializer.Deserialize<ResultadoIA>(json, JsonOptions)
+            var resultado = JsonSerializer.Deserialize<ResultadoIA>(json, JsonOptions)
                 ?? throw new IntegracaoIAException("A IA retornou uma resposta invalida para a postagem.");
+
+            ValidarResultado(resultado);
+
+            return resultado;
         }
         catch (JsonException exception)
         {
@@ -98,7 +102,7 @@ public class OpenRouterIAProvider(
                 new OpenRouterMessage
                 {
                     Role = "system",
-                    Content = "Voce responde somente JSON valido, sem Markdown e sem texto adicional."
+                    Content = "Voce e um servico de IA que responde somente JSON valido no contrato solicitado."
                 },
                 new OpenRouterMessage
                 {
@@ -130,6 +134,16 @@ public class OpenRouterIAProvider(
         }
 
         return content.GetString();
+    }
+
+    private static void ValidarResultado(ResultadoIA resultado)
+    {
+        if (string.IsNullOrWhiteSpace(resultado.Resumo)
+            || string.IsNullOrWhiteSpace(resultado.Tags)
+            || string.IsNullOrWhiteSpace(resultado.Categoria))
+        {
+            throw new IntegracaoIAException("A IA retornou uma resposta incompleta para a postagem.");
+        }
     }
 
     private sealed class OpenRouterRequest
